@@ -36,15 +36,14 @@
   <section id="module-batch_multi_plot_spectrogram">
 <span id="module-reference"></span><h1>Module Reference<a class="headerlink" href="#module-batch_multi_plot_spectrogram" title="Link to this heading">¶</a></h1>
 <p>Provides batch spectrogram plotting utilities.
-Should work with CDFs like those from FAST (see batch_multi_plot_FAST_spectrograms.py) but should also be flexible with other data</p>
-<p>Assumed folder layout is {CDF_DATA_DIRECTORY}/year/month
-Filenames in the month folders assumed to be in the following formats:</p>
-<blockquote>
-<div><p>{??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known “instruments” are ees, eeb, ies, or ieb)
-{??}_{??}_orb_{orbit}_{??}.cdf</p>
-</div></blockquote>
+Should work with CDFs like those from FAST (see batch_multi_plot_FAST_spectrograms.py) but should also be flexible with other data.</p>
 <dl class="simple">
-<dt>Examples:</dt><dd><p>FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
+<dt>Assumed folder layout is::</dt><dd><p>{CDF_DATA_DIRECTORY}/year/month</p>
+</dd>
+<dt>Filenames in the month folders assumed to be in the following formats::</dt><dd><p>{??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known “instruments” are ees, eeb, ies, or ieb)
+{??}_{??}_orb_{orbit}_{??}.cdf</p>
+</dd>
+<dt>Examples::</dt><dd><p>FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
 FAST_data/2000/01/fa_k0_orb_13312_v01.cdf</p>
 </dd>
 </dl>
@@ -390,15 +389,14 @@ once the configured batch size is reached or <code class="docutils literal notra
 </dl>
 </dd></dl>
 
-<p id="module-batch_multi_plot_FAST_spectrograms">Plots a folder of FAST ESA data as spectrograms</p>
-<p>Assumed folder layout is {FAST_CDF_DATA_FOLDER_PATH}/year/month
-Filenames in the month folders assumed to be in the following formats:</p>
-<blockquote>
-<div><p>{??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known “instruments” are ees, eeb, ies, or ieb)
-{??}_{??}_orb_{orbit}_{??}.cdf</p>
-</div></blockquote>
+<p id="module-batch_multi_plot_FAST_spectrograms">Plots a folder of FAST ESA data as spectrograms.</p>
 <dl class="simple">
-<dt>Examples:</dt><dd><p>FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
+<dt>Assumed folder layout is::</dt><dd><p>{FAST_CDF_DATA_FOLDER_PATH}/year/month</p>
+</dd>
+<dt>Filenames in the month folders assumed to be in the following formats::</dt><dd><p>{??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known “instruments” are ees, eeb, ies, or ieb)
+{??}_{??}_orb_{orbit}_{??}.cdf</p>
+</dd>
+<dt>Examples::</dt><dd><p>FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
 FAST_data/2000/01/fa_k0_orb_13312_v01.cdf</p>
 </dd>
 </dl>
@@ -766,6 +764,45 @@ of linear/log y and z, using colormaps tailored for each.</p>
 starting subsequent combinations.</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.round_extrema">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">round_extrema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#round_extrema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.round_extrema" title="Link to this definition">¶</a></dt>
+<dd><p>Round an extrema value up or down to a visually clean axis limit.</p>
+<p>This function is used to make plot axis extrema (min/max) more visually appealing
+and consistent by rounding them to the nearest significant digit in the specified direction.
+For example, 1234 rounded up becomes 1300, and 0.0123 rounded down becomes 0.012.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<em>float</em><em> or </em><em>int</em>) – The extrema value to round. If zero, returns 0.0.</p></li>
+<li><p><strong>direction</strong> (<em>{'up'</em><em>, </em><em>'down'}</em>) – The direction to round:
+- ‘up’: round up to the next clean value (for maxima)
+- ‘down’: round down to the previous clean value (for minima)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The rounded extrema value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If an invalid direction is provided.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="s1">&#39;up&#39;</span><span class="p">)</span>
+<span class="go">1300.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="s1">&#39;down&#39;</span><span class="p">)</span>
+<span class="go">1200.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mf">0.0123</span><span class="p">,</span> <span class="s1">&#39;up&#39;</span><span class="p">)</span>
+<span class="go">0.013</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mf">0.0123</span><span class="p">,</span> <span class="s1">&#39;down&#39;</span><span class="p">)</span>
+<span class="go">0.012</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </section>
 
 
@@ -818,6 +855,7 @@ starting subsequent combinations.</p>
 <li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.flush_info_logger_buffer"><code class="docutils literal notranslate"><span class="pre">flush_info_logger_buffer()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.info_logger"><code class="docutils literal notranslate"><span class="pre">info_logger()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.round_extrema"><code class="docutils literal notranslate"><span class="pre">round_extrema()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="batching_and_logging.html">Batching and Buffered Logging</a></li>
