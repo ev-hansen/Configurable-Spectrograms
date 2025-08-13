@@ -1,0 +1,521 @@
+sample orbit: 13616
+--orb--
+	Epoch
+		(396,)
+	Time_PB5
+		(396, 3)
+	unit_time
+		(3,)
+	label_time
+		(3,)
+	format_time
+		(3,)
+	cartesian
+		(3,)
+	quality_flag
+		(396,)
+	post_gap_flag
+		(396,)
+	unix_time
+		(396,)
+	orbit
+		(396,)
+	fa_spin_ra
+		(396,)
+	fa_spin_dec
+		(396,)
+	r
+		(396, 3)
+	label_r
+		(3,)
+	v
+		(396, 3)
+	label_v
+		(3,)
+	alt
+		(396,)
+	flat
+		(396,)
+	flng
+		(396,)
+	mlt
+		(396,)
+	ilat
+		(396,)
+
+--ies--
+	epoch
+		(800,)
+	time_unix
+		(800,)
+	time_start
+		(800,)
+	time_end
+		(800,)
+	time_delta
+		(800,)
+	time_integ
+		(800,)
+	header_bytes
+		(800, 44)
+	valid
+		(800,)
+	data_quality
+		(800,)
+	nbins
+		(800,)
+	nenergy
+		(800,)
+	geom_factor
+		(800,)
+	gf_ind
+		(800,)
+	bins_ind
+		(800,)
+	mode_ind
+		(800,)
+	theta_shift
+		(800,)
+	theta_max
+		(800,)
+	theta_min
+		(800,)
+	bkg
+		(800,)
+	sc_pot
+		(800,)
+	data
+		(800, 64, 96)
+	eflux
+		(800, 64, 96)
+	pitch_angle
+		(800, 64, 96)
+	domega
+		(800, 64, 96)
+	energy_full
+		(800, 64, 96)
+	denergy_full
+		(800, 64, 96)
+	orbit_number
+		(2,)
+	orbit_number_time
+		(2,)
+	orbit_number_epoch
+		(2,)
+	project_name
+		()
+	data_name
+		()
+	data_level
+		()
+	units_name
+		()
+	units_procedure
+		()
+	num_dists
+		()
+	bins
+		(2, 64, 96)
+	energy
+		(2, 64, 96)
+	denergy
+		(2, 64, 96)
+	theta
+		(2, 64, 96)
+	dtheta
+		(2, 64, 96)
+	gf
+		(10, 64, 96)
+	eff
+		(2, 64, 96)
+	dead
+		()
+	mass
+		()
+	charge
+		()
+	bkg_arr
+		(10, 64, 96)
+	orbit_start
+		()
+	orbit_end
+		()
+	energy_channel
+		(96,)
+	pitch_angle_bin
+		(64,)
+	compno_96
+		(96,)
+	compno_64
+		(64,)
+	energy_labl_96
+		(96,)
+	angle_labl_64
+		(64,)
+	eflux_bypitch_labl
+		(64,)
+	eflux_byenergy_labl
+		(96,)
+	eflux_movie gave No records found for variable eflux_movie
+	eflux_byE_atA gave No records found for variable eflux_byE_atA
+	eflux_byA_atE gave No records found for variable eflux_byA_atE
+	pitch_angle_median gave No records found for variable pitch_angle_median
+	energy_median gave No records found for variable energy_median
+
+--ees--
+	epoch
+		(800,)
+	time_unix
+		(800,)
+	time_start
+		(800,)
+	time_end
+		(800,)
+	time_delta
+		(800,)
+	time_integ
+		(800,)
+	header_bytes
+		(800, 44)
+	valid
+		(800,)
+	data_quality
+		(800,)
+	nbins
+		(800,)
+	nenergy
+		(800,)
+	geom_factor
+		(800,)
+	gf_ind
+		(800,)
+	bins_ind
+		(800,)
+	mode_ind
+		(800,)
+	theta_shift
+		(800,)
+	theta_max
+		(800,)
+	theta_min
+		(800,)
+	bkg
+		(800,)
+	sc_pot
+		(800,)
+	data
+		(800, 64, 96)
+	eflux
+		(800, 64, 96)
+	pitch_angle
+		(800, 64, 96)
+	domega
+		(800, 64, 96)
+	energy_full
+		(800, 64, 96)
+	denergy_full
+		(800, 64, 96)
+	orbit_number
+		(2,)
+	orbit_number_time
+		(2,)
+	orbit_number_epoch
+		(2,)
+	project_name
+		()
+	data_name
+		()
+	data_level
+		()
+	units_name
+		()
+	units_procedure
+		()
+	num_dists
+		()
+	bins
+		(2, 64, 96)
+	energy
+		(3, 64, 96)
+	denergy
+		(3, 64, 96)
+	theta
+		(3, 64, 96)
+	dtheta
+		(3, 64, 96)
+	gf
+		(10, 64, 96)
+	eff
+		(3, 64, 96)
+	dead
+		()
+	mass
+		()
+	charge
+		()
+	bkg_arr
+		(10, 64, 96)
+	orbit_start
+		()
+	orbit_end
+		()
+	energy_channel
+		(96,)
+	pitch_angle_bin
+		(64,)
+	compno_96
+		(96,)
+	compno_64
+		(64,)
+	energy_labl_96
+		(96,)
+	angle_labl_64
+		(64,)
+	eflux_bypitch_labl
+		(64,)
+	eflux_byenergy_labl
+		(96,)
+	eflux_movie gave No records found for variable eflux_movie
+	eflux_byE_atA gave No records found for variable eflux_byE_atA
+	eflux_byA_atE gave No records found for variable eflux_byA_atE
+	pitch_angle_median gave No records found for variable pitch_angle_median
+	energy_median gave No records found for variable energy_median
+
+--eeb--
+	epoch
+		(903,)
+	time_unix
+		(903,)
+	time_start
+		(903,)
+	time_end
+		(903,)
+	time_delta
+		(903,)
+	time_integ
+		(903,)
+	header_bytes
+		(903, 44)
+	valid
+		(903,)
+	data_quality
+		(903,)
+	nbins
+		(903,)
+	nenergy
+		(903,)
+	geom_factor
+		(903,)
+	gf_ind
+		(903,)
+	bins_ind
+		(903,)
+	mode_ind
+		(903,)
+	theta_shift
+		(903,)
+	theta_max
+		(903,)
+	theta_min
+		(903,)
+	bkg
+		(903,)
+	sc_pot
+		(903,)
+	data
+		(903, 64, 96)
+	eflux
+		(903, 64, 96)
+	pitch_angle
+		(903, 64, 96)
+	domega
+		(903, 64, 96)
+	energy_full
+		(903, 64, 96)
+	denergy_full
+		(903, 64, 96)
+	orbit_number
+		(2,)
+	orbit_number_time
+		(2,)
+	orbit_number_epoch
+		(2,)
+	project_name
+		()
+	data_name
+		()
+	data_level
+		()
+	units_name
+		()
+	units_procedure
+		()
+	num_dists
+		()
+	bins
+		(32, 96)
+	energy
+		(2, 32, 96)
+	denergy
+		(2, 32, 96)
+	theta
+		(2, 32, 96)
+	dtheta
+		(2, 32, 96)
+	gf
+		(64, 96)
+	eff
+		(2, 32, 96)
+	dead
+		()
+	mass
+		()
+	charge
+		()
+	bkg_arr
+		(64, 96)
+	orbit_start
+		()
+	orbit_end
+		()
+	energy_channel
+		(96,)
+	pitch_angle_bin
+		(64,)
+	compno_96
+		(96,)
+	compno_64
+		(64,)
+	energy_labl_96
+		(96,)
+	angle_labl_64
+		(64,)
+	eflux_bypitch_labl
+		(64,)
+	eflux_byenergy_labl
+		(96,)
+	eflux_movie gave No records found for variable eflux_movie
+	eflux_byE_atA gave No records found for variable eflux_byE_atA
+	eflux_byA_atE gave No records found for variable eflux_byA_atE
+	pitch_angle_median gave No records found for variable pitch_angle_median
+	energy_median gave No records found for variable energy_median
+
+--ieb--
+	epoch
+		(903,)
+	time_unix
+		(903,)
+	time_start
+		(903,)
+	time_end
+		(903,)
+	time_delta
+		(903,)
+	time_integ
+		(903,)
+	header_bytes
+		(903, 44)
+	valid
+		(903,)
+	data_quality
+		(903,)
+	nbins
+		(903,)
+	nenergy
+		(903,)
+	geom_factor
+		(903,)
+	gf_ind
+		(903,)
+	bins_ind
+		(903,)
+	mode_ind
+		(903,)
+	theta_shift
+		(903,)
+	theta_max
+		(903,)
+	theta_min
+		(903,)
+	bkg
+		(903,)
+	sc_pot
+		(903,)
+	data
+		(903, 64, 96)
+	eflux
+		(903, 64, 96)
+	pitch_angle
+		(903, 64, 96)
+	domega
+		(903, 64, 96)
+	energy_full
+		(903, 64, 96)
+	denergy_full
+		(903, 64, 96)
+	orbit_number
+		(2,)
+	orbit_number_time
+		(2,)
+	orbit_number_epoch
+		(2,)
+	project_name
+		()
+	data_name
+		()
+	data_level
+		()
+	units_name
+		()
+	units_procedure
+		()
+	num_dists
+		()
+	bins
+		(32, 96)
+	energy
+		(3, 32, 96)
+	denergy
+		(3, 32, 96)
+	theta
+		(3, 32, 96)
+	dtheta
+		(3, 32, 96)
+	gf
+		(64, 96)
+	eff
+		(3, 32, 96)
+	dead
+		()
+	mass
+		()
+	charge
+		()
+	bkg_arr
+		(64, 96)
+	orbit_start
+		()
+	orbit_end
+		()
+	energy_channel
+		(96,)
+	pitch_angle_bin
+		(64,)
+	compno_96
+		(96,)
+	compno_64
+		(64,)
+	energy_labl_96
+		(96,)
+	angle_labl_64
+		(64,)
+	eflux_bypitch_labl
+		(64,)
+	eflux_byenergy_labl
+		(96,)
+	eflux_movie gave No records found for variable eflux_movie
+	eflux_byE_atA gave No records found for variable eflux_byE_atA
+	eflux_byA_atE gave No records found for variable eflux_byA_atE
+	pitch_angle_median gave No records found for variable pitch_angle_median
+	energy_median gave No records found for variable energy_median
+

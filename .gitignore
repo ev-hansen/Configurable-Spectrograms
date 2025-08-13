@@ -1,0 +1,13 @@
+.idea/
+.ipynb_checkpoints/
+.spyproject/
+.vscode/
+FAST_data/
+FAST_plots/
+*.log
+*.json
+.DS_Store
+docs/_build/
+batch_multi_plot_FAST_logfile_datetime.txt
+batch_multi_plot_logfile_datetime.txt
+__pycache__/

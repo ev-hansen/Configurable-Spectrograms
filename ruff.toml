@@ -1,0 +1,27 @@
+###############################################################################
+# Ruff configuration (ruff.toml form)
+###############################################################################
+
+# Global options
+line-length = 120
+extend-exclude = [
+    "__pycache__",
+    ".github",
+    ".idea",
+    ".ipynb_checkpoints",
+    ".spyproject",
+    ".vscode",
+    "FAST_data",
+    "FAST_plots",
+]
+
+[lint]
+select = ["E", "F", "W", "B"]  # Core error/warning sets + bugbear
+ignore = []
+# E already includes E722 (no bare except). Keeping extend-select for clarity.
+extend-select = ["E722"]
+
+[lint.per-file-ignores]
+# Uncomment to relax legacy archival code:
+# "backup of old files/*" = ["E722"]
+

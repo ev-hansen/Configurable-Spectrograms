@@ -1,0 +1,5 @@
+# requirements for building docs on RTD or locally
+sphinx
+
+# Add any Sphinx extensions you use below, e.g.:
+sphinx_rtd_theme
