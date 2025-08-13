@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Provides batch spectrogram plotting utilities.
-    Should work with CDFs like those from FAST (see batch_multi_plot_FAST_spectrograms.py) but should also be flexible with other data
+Should work with CDFs like those from FAST (see batch_multi_plot_FAST_spectrograms.py) but should also be flexible with other data
 
-    Assumed folder layout is {CDF_DATA_DIRECTORY}/year/month
-    Filenames in the month folders assumed to be in the following formats:
-        {??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known "instruments" are ees, eeb, ies, or ieb)
-        {??}_{??}_orb_{orbit}_{??}.cdf
-    Examples:
-        FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
-        FAST_data/2000/01/fa_k0_orb_13312_v01.cdf
+Assumed folder layout is {CDF_DATA_DIRECTORY}/year/month
+Filenames in the month folders assumed to be in the following formats:
+    {??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known "instruments" are ees, eeb, ies, or ieb)
+    {??}_{??}_orb_{orbit}_{??}.cdf
+Examples:
+    FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
+    FAST_data/2000/01/fa_k0_orb_13312_v01.cdf
 """
 
 __authors__: list[str] = ["Ev Hansen"]

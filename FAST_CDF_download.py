@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" Script to download FAST CDF files from CDA Web since the web interface can have issues
-    NOTE: can't get orb ephemeris files to my knowledge :(
+"""Script to download FAST CDF files from CDA Web since the web interface can have issues
+NOTE: can't get orb ephemeris files to my knowledge :(
 """
 
 __authors__: list[str] = ["Ev Hansen"]
@@ -11,7 +11,7 @@ __credits__: list[list[str]] = [
     ["Ev Hansen", "Python code"],
     ["Emma Mirizio", "Co-Mentor"],
     ["Marilia Samara", "Co-Mentor"],
-    ]
+]
 
 __date__: str = "2025-08-13"
 __status__: str = "Development"
@@ -83,6 +83,7 @@ def FAST_ESA_CDF_download(
                                 total_length = int(total_length)
                                 for data in r.iter_content(chunk_size=4096):
                                     f.write(data)
+
 
 FAST_ESA_CDF_download(year=2000)
 FAST_ESA_CDF_download(year=2001)

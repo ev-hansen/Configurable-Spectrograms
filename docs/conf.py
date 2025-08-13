@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" Configuration file for Sphinx documentation
-"""
+"""Configuration file for Sphinx documentation"""
 
 __authors__: list[str] = ["Ev Hansen"]
 __contact__: str = "ephansen+gh@terpmail.umd.edu"
@@ -10,7 +9,7 @@ __credits__: list[list[str]] = [
     ["Ev Hansen", "Python code"],
     ["Emma Mirizio", "Co-Mentor"],
     ["Marilia Samara", "Co-Mentor"],
-    ]
+]
 
 __date__: str = "2025-08-13"
 __status__: str = "Development"
