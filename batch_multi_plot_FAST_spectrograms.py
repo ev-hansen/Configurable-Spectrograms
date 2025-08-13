@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Plots a folder of FAST ESA data as spectrograms
+"""
+Plots a folder of FAST ESA data as spectrograms.
 
-Assumed folder layout is {FAST_CDF_DATA_FOLDER_PATH}/year/month
-Filenames in the month folders assumed to be in the following formats:
+Assumed folder layout is::
+    {FAST_CDF_DATA_FOLDER_PATH}/year/month
+
+Filenames in the month folders assumed to be in the following formats::
     {??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known "instruments" are ees, eeb, ies, or ieb)
     {??}_{??}_orb_{orbit}_{??}.cdf
-Examples:
+
+Examples::
     FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
     FAST_data/2000/01/fa_k0_orb_13312_v01.cdf
 """
@@ -257,6 +261,61 @@ def _terminate_all_child_processes() -> None:
                 pass
     except Exception as psutil_process_iter_exception:
         pass
+
+
+def round_extrema(value: float | int, direction: str) -> float:
+    """
+    Round an extrema value up or down to a visually clean axis limit.
+
+    This function is used to make plot axis extrema (min/max) more visually appealing
+    and consistent by rounding them to the nearest significant digit in the specified direction.
+    For example, 1234 rounded up becomes 1300, and 0.0123 rounded down becomes 0.012.
+
+    Parameters
+    ----------
+    value : float or int
+        The extrema value to round. If zero, returns 0.0.
+    direction : {'up', 'down'}
+        The direction to round:
+        - 'up': round up to the next clean value (for maxima)
+        - 'down': round down to the previous clean value (for minima)
+
+    Returns
+    -------
+    float
+        The rounded extrema value.
+
+    Raises
+    ------
+    ValueError
+        If an invalid direction is provided.
+
+    Examples
+    --------
+    >>> round_extrema(1234, 'up')
+    1300.0
+    >>> round_extrema(1234, 'down')
+    1200.0
+    >>> round_extrema(0.0123, 'up')
+    0.013
+    >>> round_extrema(0.0123, 'down')
+    0.012
+    """
+    # Special case: zero should always round to zero
+    if value == 0:
+        return 0.0
+    # Determine the rounding factor based on the order of magnitude
+    factor = 10 ** (math.floor(math.log10(abs(value))) - 1)
+    # Round up for maxima, down for minima
+    if direction == "up":
+        # Use math.ceil to ensure we always round up
+        return float(math.ceil(value / factor) * factor)
+    elif direction == "down":
+        # Use math.floor to ensure we always round down
+        return float(math.floor(value / factor) * factor)
+    else:
+        # Raise an error for invalid direction arguments
+        raise ValueError(f"Invalid direction: {direction}")
 
 
 def FAST_plot_pitch_angle_grid(
@@ -784,10 +843,30 @@ def FAST_process_single_orbit(
                 z_max_override = None
                 if isinstance(global_extrema, dict):
                     key_base = f"{inst_detected}_{y_axis_scale}_{z_axis_scale}"
-                    y_min_override = global_extrema.get(f"{key_base}_y_min")
-                    y_max_override = global_extrema.get(f"{key_base}_y_max")
-                    z_min_override = global_extrema.get(f"{key_base}_z_min")
-                    z_max_override = global_extrema.get(f"{key_base}_z_max")
+                    y_min_raw = global_extrema.get(f"{key_base}_y_min")
+                    y_max_raw = global_extrema.get(f"{key_base}_y_max")
+                    z_min_raw = global_extrema.get(f"{key_base}_z_min")
+                    z_max_raw = global_extrema.get(f"{key_base}_z_max")
+                    y_min_override = (
+                        round_extrema(y_min_raw, "down")
+                        if y_min_raw is not None
+                        else None
+                    )
+                    y_max_override = (
+                        round_extrema(y_max_raw, "up")
+                        if y_max_raw is not None
+                        else None
+                    )
+                    z_min_override = (
+                        round_extrema(z_min_raw, "down")
+                        if z_min_raw is not None
+                        else None
+                    )
+                    z_max_override = (
+                        round_extrema(z_max_raw, "up")
+                        if z_max_raw is not None
+                        else None
+                    )
                 fig_pa, canvas_pa = FAST_plot_pitch_angle_grid(
                     cdf_path,
                     filtered_orbits_df=filtered_orbits_dataframe,
