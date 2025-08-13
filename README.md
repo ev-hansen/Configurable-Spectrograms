@@ -11,7 +11,7 @@ View documentation on [readthedocs](https://configurable-spectrograms.readthedoc
 - progress saved mid-run in case scripts need to be interrupted
 - example usage for [FAST](https://web.archive.org/web/20250813172018/https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1996-049A) ion and electron ESA data sourced from downloaded [CDF](https://web.archive.org/web/20250813173821/https://cdf.gsfc.nasa.gov/) files 
 
-**TODO**: *Ensure tests are formatted correctly, upload script to find when FAST CDF files are in the auroral cusp and generate the ``FAST_Cusp_Indices.csv`` file, run said script on 2001 CDF files and update said ``.csv`` file, convert counts to flux for FAST plots, create script to sort (at least) FAST CDF data into the assumed folder layout of ``{FAST_CDF_DATA_FOLDER_PATH}/year/month`` think of a clever/fun/more memorable name*
+**TODO**: *Ensure tests are formatted correctly, upload example spectrogram plots from FAST data, upload script to find when FAST CDF files are in the auroral cusp and generate the ``FAST_Cusp_Indices.csv`` file, run said script on 2001 CDF files and update said ``.csv`` file, convert counts to flux for FAST plots, create script to sort (at least) FAST CDF data into the assumed folder layout of ``{FAST_CDF_DATA_FOLDER_PATH}/year/month`` think of a clever/fun/more memorable name*
 
 # Files
 ## ``batch_multi_plot_spectrogram.py``
