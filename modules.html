@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Module Reference &#8212; Configurable Spectrograms  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Batching and Buffered Logging" href="batching_and_logging.html" />
+    <link rel="prev" title="Configurable Spectrograms" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-batch_multi_plot_spectrogram">
+<span id="module-reference"></span><h1>Module Reference<a class="headerlink" href="#module-batch_multi_plot_spectrogram" title="Link to this heading">¶</a></h1>
+<p>Provides batch spectrogram plotting utilities.
+Should work with CDFs like those from FAST (see batch_multi_plot_FAST_spectrograms.py) but should also be flexible with other data</p>
+<p>Assumed folder layout is {CDF_DATA_DIRECTORY}/year/month
+Filenames in the month folders assumed to be in the following formats:</p>
+<blockquote>
+<div><p>{??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known “instruments” are ees, eeb, ies, or ieb)
+{??}_{??}_orb_{orbit}_{??}.cdf</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Examples:</dt><dd><p>FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
+FAST_data/2000/01/fa_k0_orb_13312_v01.cdf</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.close_all_axes_and_clear">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">close_all_axes_and_clear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#close_all_axes_and_clear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.close_all_axes_and_clear" title="Link to this definition">¶</a></dt>
+<dd><p>Close axes/subplots and clear a figure to free memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>) – Figure instance to clear and dispose.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Ensures axes are deleted, the canvas is closed/detached, and removes the figure
+from the global Gcf registry when possible to mitigate memory growth during
+large batch operations.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.configure_log_batch">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">configure_log_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#configure_log_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.configure_log_batch" title="Link to this definition">¶</a></dt>
+<dd><p>Configure buffered logging batch size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch_size</strong> (<em>int</em>) – Desired number of log records to accumulate before an automatic flush.
+Values less than 1 are coerced to 1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.generic_batch_plot">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">generic_batch_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">items</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">build_datasets_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_center_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_window_seconds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertical_lines_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./batch_multi_plot_progress.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_progress_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flush_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_flush_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">install_signal_handlers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#generic_batch_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.generic_batch_plot" title="Link to this definition">¶</a></dt>
+<dd><p>Generic batch runner for plotting datasets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>items</strong> (<em>iterable</em>) – Iterable of item identifiers (any <code class="docutils literal notranslate"><span class="pre">repr</span></code>-able objects).</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – Base output directory; plots saved under <code class="docutils literal notranslate"><span class="pre">output_dir/&lt;item&gt;/generic.png</span></code>.</p></li>
+<li><p><strong>build_datasets_fn</strong> (<em>callable</em>) – Callable returning <code class="docutils literal notranslate"><span class="pre">list[dict]</span></code> describing datasets for an item.</p></li>
+<li><p><strong>zoom_center_fn</strong> (<em>callable</em><em>, </em><em>optional</em>) – Callable mapping item -&gt; center UNIX time (or <code class="docutils literal notranslate"><span class="pre">None</span></code>) for zoom.</p></li>
+<li><p><strong>zoom_window_seconds</strong> (<em>float</em><em>, </em><em>optional</em>) – Duration of zoom window in seconds.</p></li>
+<li><p><strong>vertical_lines_fn</strong> (<em>callable</em><em>, </em><em>optional</em>) – Callable mapping item -&gt; list[float] UNIX timestamps (or <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p></li>
+<li><p><strong>y_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Y-axis scaling for all rows.</p></li>
+<li><p><strong>z_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Color scaling for all rows.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em><em>, </em><em>default 'viridis'</em>) – Matplotlib colormap name.</p></li>
+<li><p><strong>max_workers</strong> (<em>int</em><em>, </em><em>default 2</em>) – Number of parallel worker processes.</p></li>
+<li><p><strong>progress_json_path</strong> (<em>str</em><em>, </em><em>default PLOTTING_PROGRESS_JSON_PATH</em>) – Path to progress JSON (resumable state). Created/updated as needed.</p></li>
+<li><p><strong>ignore_progress_json</strong> (<em>bool</em><em>, </em><em>default False</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, skip reading existing progress prior to execution.</p></li>
+<li><p><strong>flush_batch_size</strong> (<em>int</em><em>, </em><em>default 10</em>) – Progress/log batch size; values &lt; 1 coerced to 1. Final partial batch flushed.</p></li>
+<li><p><strong>log_flush_batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Explicit log batch size; if <code class="docutils literal notranslate"><span class="pre">None</span></code> reuse <code class="docutils literal notranslate"><span class="pre">flush_batch_size</span></code>.</p></li>
+<li><p><strong>install_signal_handlers</strong> (<em>bool</em><em>, </em><em>default True</em>) – When True, a temporary SIGINT handler is installed (restored on exit) to
+enable graceful interruption (progress &amp; log flush). Set False in embedded
+environments if altering the global handler causes side-effects.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Sequence of <code class="docutils literal notranslate"><span class="pre">(item,</span> <span class="pre">status)</span></code> with <code class="docutils literal notranslate"><span class="pre">status</span></code> in {<code class="docutils literal notranslate"><span class="pre">'ok'</span></code>, <code class="docutils literal notranslate"><span class="pre">'no_data'</span></code>, <code class="docutils literal notranslate"><span class="pre">'error'</span></code>}.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of tuple</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Logging is buffered and force-flushed at completion.</p></li>
+<li><p>Progress JSON contains simple lists of completed, error, and no-data items.</p></li>
+<li><p>Items are identified via <code class="docutils literal notranslate"><span class="pre">repr(item)</span></code> for data-agnostic persistence.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.generic_plot_multirow_optional_zoom">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">generic_plot_multirow_optional_zoom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertical_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_duration_minutes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_label_pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_label_rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">90</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#generic_plot_multirow_optional_zoom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.generic_plot_multirow_optional_zoom" title="Link to this definition">¶</a></dt>
+<dd><p>Render a multi-row spectrogram grid with an optional zoom column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datasets</strong> (<em>list</em><em> of </em><em>dict</em>) – <p>Each dict must contain keys:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'x'</span></code> – 1D UNIX epoch seconds (float) array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'y'</span></code> – 1D energy (eV) array (unfiltered, 0–4000 typical)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'data'</span></code> – 3D ndarray that can be collapsed (time, pitch/angle, energy)</p></li>
+</ul>
+<p>Optional per-row keys (all honored when present):</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'label'</span></code> – Row label placed on the left (rotated)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'y_label'</span></code> – Units label for y-axis (default: <code class="docutils literal notranslate"><span class="pre">'Energy</span> <span class="pre">(eV)'</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'z_label'</span></code> – Color scale label (default: <code class="docutils literal notranslate"><span class="pre">'Counts'</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'y_min'</span></code> / <code class="docutils literal notranslate"><span class="pre">'y_max'</span></code> – Energy bounds (overrides global <code class="docutils literal notranslate"><span class="pre">y_min</span></code> / <code class="docutils literal notranslate"><span class="pre">y_max</span></code> args)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'z_min'</span></code> / <code class="docutils literal notranslate"><span class="pre">'z_max'</span></code> – Color bounds (overrides global <code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code> args)</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'vmin'</span></code> / <code class="docutils literal notranslate"><span class="pre">'vmax'</span></code> – Precomputed percentile (or fixed) color bounds used when</dt><dd><p><code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code> not provided. (<code class="docutils literal notranslate"><span class="pre">vmin</span></code>/<code class="docutils literal notranslate"><span class="pre">vmax</span></code> are interpreted as the <em>row’s</em>
+native bounds; global <code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code> will still clamp if supplied.)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p></li>
+<li><p><strong>vertical_lines</strong> (<em>list</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – UNIX timestamps defining event/selection markers and potential zoom window.</p></li>
+<li><p><strong>zoom_duration_minutes</strong> (<em>float</em><em>, </em><em>default 6.25</em>) – Desired zoom window length in minutes (may auto-expand to include full marked span).</p></li>
+<li><p><strong>y_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Y-axis scaling.</p></li>
+<li><p><strong>z_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Color (intensity) scale.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em><em>, </em><em>default 'viridis'</em>) – Matplotlib colormap.</p></li>
+<li><p><strong>show</strong> (<em>bool</em><em>, </em><em>default False</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, display interactively.</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – Figure suptitle.</p></li>
+<li><p><strong>row_label_pad</strong> (<em>int</em><em>, </em><em>default 50</em>) – Padding for row labels.</p></li>
+<li><p><strong>row_label_rotation</strong> (<em>int</em><em>, </em><em>default 90</em>) – Rotation angle (degrees) for row labels.</p></li>
+<li><p><strong>y_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Global override bounds applied uniformly when provided. Any per-row
+<code class="docutils literal notranslate"><span class="pre">y_min</span></code> / <code class="docutils literal notranslate"><span class="pre">y_max</span></code> / <code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code> in a dataset dict take
+precedence. When neither global nor per-row color bounds are supplied
+the function relies on each dataset’s <code class="docutils literal notranslate"><span class="pre">vmin</span></code> / <code class="docutils literal notranslate"><span class="pre">vmax</span></code> (if present)
+else falls back to internal percentile selection in lower-level calls.</p></li>
+<li><p><strong>y_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Global override bounds applied uniformly when provided. Any per-row
+<code class="docutils literal notranslate"><span class="pre">y_min</span></code> / <code class="docutils literal notranslate"><span class="pre">y_max</span></code> / <code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code> in a dataset dict take
+precedence. When neither global nor per-row color bounds are supplied
+the function relies on each dataset’s <code class="docutils literal notranslate"><span class="pre">vmin</span></code> / <code class="docutils literal notranslate"><span class="pre">vmax</span></code> (if present)
+else falls back to internal percentile selection in lower-level calls.</p></li>
+<li><p><strong>z_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Global override bounds applied uniformly when provided. Any per-row
+<code class="docutils literal notranslate"><span class="pre">y_min</span></code> / <code class="docutils literal notranslate"><span class="pre">y_max</span></code> / <code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code> in a dataset dict take
+precedence. When neither global nor per-row color bounds are supplied
+the function relies on each dataset’s <code class="docutils literal notranslate"><span class="pre">vmin</span></code> / <code class="docutils literal notranslate"><span class="pre">vmax</span></code> (if present)
+else falls back to internal percentile selection in lower-level calls.</p></li>
+<li><p><strong>z_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Global override bounds applied uniformly when provided. Any per-row
+<code class="docutils literal notranslate"><span class="pre">y_min</span></code> / <code class="docutils literal notranslate"><span class="pre">y_max</span></code> / <code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code> in a dataset dict take
+precedence. When neither global nor per-row color bounds are supplied
+the function relies on each dataset’s <code class="docutils literal notranslate"><span class="pre">vmin</span></code> / <code class="docutils literal notranslate"><span class="pre">vmax</span></code> (if present)
+else falls back to internal percentile selection in lower-level calls.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(fig,</span> <span class="pre">canvas)</span></code> or <code class="docutils literal notranslate"><span class="pre">(None,</span> <span class="pre">None)</span></code> if <code class="docutils literal notranslate"><span class="pre">datasets</span></code> is empty.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Determines need for a zoom column dynamically: only rendered if at least</dt><dd><p>one dataset contains non-NaN values inside the computed zoom window.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Y-axis and colorbar labels default to “Energy (eV)” and “Counts” when a</dt><dd><p>dataset omits explicit <code class="docutils literal notranslate"><span class="pre">y_label</span></code> / <code class="docutils literal notranslate"><span class="pre">z_label</span></code> (defaults originate in
+<code class="docutils literal notranslate"><span class="pre">generic_plot_spectrogram_set</span></code> / dataset assembly).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.generic_plot_spectrogram_set">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">generic_plot_spectrogram_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datasets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collapse_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_window_seconds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertical_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_is_unix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figure_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#generic_plot_spectrogram_set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.generic_plot_spectrogram_set" title="Link to this definition">¶</a></dt>
+<dd><p>Plot a vertical stack of generic spectrograms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datasets</strong> (<em>list</em><em> of </em><em>dict</em>) – Each dict requires keys <code class="docutils literal notranslate"><span class="pre">'x'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y'</span></code>, <code class="docutils literal notranslate"><span class="pre">'data'</span></code> and may include optional keys:
+<code class="docutils literal notranslate"><span class="pre">'label'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y_label'</span></code>, <code class="docutils literal notranslate"><span class="pre">'z_label'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y_min'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y_max'</span></code>, <code class="docutils literal notranslate"><span class="pre">'z_min'</span></code>, <code class="docutils literal notranslate"><span class="pre">'z_max'</span></code>.</p></li>
+<li><p><strong>collapse_axis</strong> (<em>int</em><em>, </em><em>default 1</em>) – Axis index of the 3D array collapsed prior to plotting.</p></li>
+<li><p><strong>zoom_center</strong> (<em>float</em><em>, </em><em>optional</em>) – Center (UNIX time) for zoom column when used.</p></li>
+<li><p><strong>zoom_window_seconds</strong> (<em>float</em><em>, </em><em>optional</em>) – Duration of zoom window (seconds) when <code class="docutils literal notranslate"><span class="pre">zoom_center</span></code> provided.</p></li>
+<li><p><strong>vertical_lines</strong> (<em>list</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – UNIX timestamps to annotate with vertical lines.</p></li>
+<li><p><strong>x_is_unix</strong> (<em>bool</em><em>, </em><em>default True</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, x values are treated as UNIX seconds and formatted.</p></li>
+<li><p><strong>y_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Y-axis scaling mode.</p></li>
+<li><p><strong>z_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Color (intensity) scale mode.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em><em>, </em><em>default 'viridis'</em>) – Matplotlib colormap name.</p></li>
+<li><p><strong>figure_title</strong> (<em>str</em><em>, </em><em>optional</em>) – Figure-level title (sup-title).</p></li>
+<li><p><strong>show</strong> (<em>bool</em><em>, </em><em>default False</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, display interactively (requires GUI backend).</p></li>
+<li><p><strong>y_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Global Y min fallback when per-row not supplied. Defaults to 0 if omitted and per-row missing.</p></li>
+<li><p><strong>y_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Global Y max fallback when per-row not supplied. If both global and per-row absent, inferred.</p></li>
+<li><p><strong>z_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Global colorbar lower bound fallback.</p></li>
+<li><p><strong>z_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Global colorbar upper bound fallback.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(fig,</span> <span class="pre">canvas)</span></code> or <code class="docutils literal notranslate"><span class="pre">(None,</span> <span class="pre">None)</span></code> if <code class="docutils literal notranslate"><span class="pre">datasets</span></code> is empty.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.get_cdf_file_type">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">get_cdf_file_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cdf_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#get_cdf_file_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.get_cdf_file_type" title="Link to this definition">¶</a></dt>
+<dd><p>Infer instrument type from a CDF file path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cdf_file_path</strong> (<em>str</em>) – Path to the CDF file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Instrument type string (e.g., <code class="docutils literal notranslate"><span class="pre">'ees'</span></code>), <code class="docutils literal notranslate"><span class="pre">'orb'</span></code> for orbit files, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if not recognized.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.get_cdf_var_shapes">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">get_cdf_var_shapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cdf_folder_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./FAST_data/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['time_unix',</span> <span class="pre">'data',</span> <span class="pre">'energy',</span> <span class="pre">'pitch_angle']</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#get_cdf_var_shapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.get_cdf_var_shapes" title="Link to this definition">¶</a></dt>
+<dd><p>Collect shapes of variables across CDF files in a folder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cdf_folder_path</strong> (<em>str</em><em>, </em><em>default CDF_DATA_DIRECTORY</em>) – Directory containing CDF files.</p></li>
+<li><p><strong>variable_names</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>default CDF_VARIABLE_NAMES</em>) – Variable names to inspect.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping from variable name (str) to list of shape tuples (or None) per file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.get_timestamps_for_orbit">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">get_timestamps_for_orbit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filtered_orbits_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orbit_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_unix_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#get_timestamps_for_orbit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.get_timestamps_for_orbit" title="Link to this definition">¶</a></dt>
+<dd><p>Compute orbit boundary UNIX timestamps from filtered indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filtered_orbits_dataframe</strong> (<em>pandas.DataFrame</em>) – DataFrame containing filtered orbits and min/max indices per instrument.</p></li>
+<li><p><strong>orbit_number</strong> (<em>int</em>) – Orbit number to look up.</p></li>
+<li><p><strong>instrument_type</strong> (<em>str</em>) – Instrument type identifier (e.g., <code class="docutils literal notranslate"><span class="pre">'ees'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ies'</span></code>).</p></li>
+<li><p><strong>time_unix_array</strong> (<em>numpy.ndarray</em>) – 1D array of UNIX timestamps for the instrument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Boundary UNIX timestamps for the orbit (one value for a degenerate span
+or two values for start/end). Returns an empty list on invalid indices.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.get_variable_shape">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">get_variable_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cdf_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#get_variable_shape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.get_variable_shape" title="Link to this definition">¶</a></dt>
+<dd><p>Return the shape of a variable in a CDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cdf_path</strong> (<em>str</em>) – Path to the CDF file.</p></li>
+<li><p><strong>variable_name</strong> (<em>str</em>) – Variable name to inspect.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Variable shape tuple, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if variable absent / not array or an error occurs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.load_filtered_orbits">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">load_filtered_orbits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">csv_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./FAST_Cusp_Indices.csv'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#load_filtered_orbits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.load_filtered_orbits" title="Link to this definition">¶</a></dt>
+<dd><p>Load the filtered orbits CSV with a simple cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>csv_path</strong> (<em>str</em><em>, </em><em>default FILTERED_ORBITS_CSV_PATH</em>) – Path to the filtered orbits TSV/CSV file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame of filtered orbits, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if loading fails.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame or None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>A module-level dictionary caches previously loaded DataFrames keyed by absolute
+path string to avoid repeated disk I/O in batch routines.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.log_error">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">log_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_flush</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#log_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.log_error" title="Link to this definition">¶</a></dt>
+<dd><p>Queue an error log message and echo to console immediately.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.log_message">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">log_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_flush</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#log_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.log_message" title="Link to this definition">¶</a></dt>
+<dd><p>Queue an informational log message.</p>
+<p>Messages are appended to an in-memory buffer; a flush occurs automatically
+once the configured batch size is reached or <code class="docutils literal notranslate"><span class="pre">force_flush</span></code> is True.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_spectrogram.make_spectrogram">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_spectrogram.</span></span><span class="sig-name descname"><span class="pre">make_spectrogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_axis_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_axis_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_array_3d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_axis_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_axis_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_axis_is_unix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_axis_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center_timestamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_duration_seconds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_axis_scale_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_axis_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_axis_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_axis_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_axis_scale_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_axis_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_axis_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_axis_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collapse_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_object</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertical_lines_unix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/batch_multi_plot_spectrogram.html#make_spectrogram"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_spectrogram.make_spectrogram" title="Link to this definition">¶</a></dt>
+<dd><p>Plot a spectrogram by collapsing a 3D data array along an axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_axis_values</strong> (<em>array-like</em>) – 1D array for x (horizontal) axis (e.g., time sequence).</p></li>
+<li><p><strong>y_axis_values</strong> (<em>array-like</em>) – 1D array for y (vertical) axis (e.g., energy bins).</p></li>
+<li><p><strong>data_array_3d</strong> (<em>numpy.ndarray</em>) – 3D data array, e.g. <code class="docutils literal notranslate"><span class="pre">(time,</span> <span class="pre">angle/pitch,</span> <span class="pre">energy)</span></code>.</p></li>
+<li><p><strong>x_axis_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Explicit x-axis clipping bounds before plotting.</p></li>
+<li><p><strong>x_axis_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Explicit x-axis clipping bounds before plotting.</p></li>
+<li><p><strong>x_axis_is_unix</strong> (<em>bool</em><em>, </em><em>default True</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, x-axis treated as UNIX seconds and converted to dates.</p></li>
+<li><p><strong>x_axis_label</strong> (<em>str</em><em>, </em><em>optional</em>) – Custom x-axis label (default depends on <code class="docutils literal notranslate"><span class="pre">x_axis_is_unix</span></code>).</p></li>
+<li><p><strong>center_timestamp</strong> (<em>float</em><em>, </em><em>optional</em>) – Center of requested zoom window (UNIX seconds).</p></li>
+<li><p><strong>window_duration_seconds</strong> (<em>float</em><em>, </em><em>optional</em>) – Duration of zoom window; both must be provided for zoom to apply.</p></li>
+<li><p><strong>y_axis_scale_function</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>optional</em>) – Y-axis scaling; <code class="docutils literal notranslate"><span class="pre">None</span></code> behaves as <code class="docutils literal notranslate"><span class="pre">'linear'</span></code>.</p></li>
+<li><p><strong>y_axis_label</strong> (<em>str</em><em>, </em><em>optional</em>) – Y-axis label text.</p></li>
+<li><p><strong>y_axis_min</strong> (<em>float</em><em>, </em><em>default 0</em><em>, </em><em>4000</em>) – Y-axis clipping range applied before filtering / plotting.</p></li>
+<li><p><strong>y_axis_max</strong> (<em>float</em><em>, </em><em>default 0</em><em>, </em><em>4000</em>) – Y-axis clipping range applied before filtering / plotting.</p></li>
+<li><p><strong>z_axis_scale_function</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>optional</em>) – Color scale mode; <code class="docutils literal notranslate"><span class="pre">None</span></code> behaves as <code class="docutils literal notranslate"><span class="pre">'linear'</span></code>.</p></li>
+<li><p><strong>z_axis_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Optional color scale bounds (percentiles chosen if omitted).</p></li>
+<li><p><strong>z_axis_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Optional color scale bounds (percentiles chosen if omitted).</p></li>
+<li><p><strong>z_axis_label</strong> (<em>str</em><em>, </em><em>optional</em>) – Colorbar label text.</p></li>
+<li><p><strong>collapse_axis</strong> (<em>int</em><em>, </em><em>default 1</em>) – Axis index along which to collapse the 3D data array.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em><em>, </em><em>default 'viridis'</em>) – Matplotlib colormap name.</p></li>
+<li><p><strong>axis_object</strong> (<em>matplotlib.axes.Axes</em><em>, </em><em>optional</em>) – Existing axes to draw into; if <code class="docutils literal notranslate"><span class="pre">None</span></code> a new figure/axes created.</p></li>
+<li><p><strong>instrument_label</strong> (<em>str</em><em>, </em><em>optional</em>) – Title string applied to the axes.</p></li>
+<li><p><strong>vertical_lines_unix</strong> (<em>list</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – UNIX timestamps to annotate with vertical lines.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>axis_object</strong> (<em>matplotlib.axes.Axes or None</em>) – The axis object used for plotting (<code class="docutils literal notranslate"><span class="pre">None</span></code> if no data plotted).</p></li>
+<li><p><strong>x_axis_plot</strong> (<em>numpy.ndarray or None</em>) – X values actually used (possibly filtered / converted), or <code class="docutils literal notranslate"><span class="pre">None</span></code> if skipped.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-batch_multi_plot_FAST_spectrograms">Plots a folder of FAST ESA data as spectrograms</p>
+<p>Assumed folder layout is {FAST_CDF_DATA_FOLDER_PATH}/year/month
+Filenames in the month folders assumed to be in the following formats:</p>
+<blockquote>
+<div><p>{??}_{??}_{??}_{instrument}_{timestamp}_{orbit}_v02.cdf      (known “instruments” are ees, eeb, ies, or ieb)
+{??}_{??}_orb_{orbit}_{??}.cdf</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Examples:</dt><dd><p>FAST_data/2000/01/fa_esa_l2_eeb_20000101001737_13312_v02.cdf
+FAST_data/2000/01/fa_k0_orb_13312_v01.cdf</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.FAST_plot_instrument_grid">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">FAST_plot_instrument_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cdf_file_paths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered_orbits_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orbit_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_duration_minutes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_function_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_function_z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('ees',</span> <span class="pre">'eeb',</span> <span class="pre">'ies',</span> <span class="pre">'ieb')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_extrema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#FAST_plot_instrument_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.FAST_plot_instrument_grid" title="Link to this definition">¶</a></dt>
+<dd><p>Plot a multi-instrument ESA spectrogram grid for a single orbit.</p>
+<p>Loads each instrument CDF, orients and filters the data, collapses across
+pitch-angle, and constructs datasets for
+<code class="docutils literal notranslate"><span class="pre">generic_plot_multirow_optional_zoom</span></code>. When vertical lines are available
+for the orbit, a zoom column is included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cdf_file_paths</strong> (<em>dict</em><em> of </em><em>{str: str}</em>) – Mapping of instrument key (<code class="docutils literal notranslate"><span class="pre">'ees'</span></code>, <code class="docutils literal notranslate"><span class="pre">'eeb'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ies'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ieb'</span></code>)
+to CDF file path. Missing instruments are skipped.</p></li>
+<li><p><strong>filtered_orbits_df</strong> (<em>pandas.DataFrame</em><em> or </em><em>None</em>) – DataFrame for vertical line computation; if <code class="docutils literal notranslate"><span class="pre">None</span></code>, lines are omitted.</p></li>
+<li><p><strong>orbit_number</strong> (<em>int</em><em> or </em><em>None</em>) – Orbit identifier used in titles/lines.</p></li>
+<li><p><strong>zoom_duration_minutes</strong> (<em>float</em><em>, </em><em>default 6.25</em>) – Zoom window length (minutes).</p></li>
+<li><p><strong>scale_function_y</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Y-axis scaling.</p></li>
+<li><p><strong>scale_function_z</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Color scale for intensity.</p></li>
+<li><p><strong>instrument_order</strong> (<em>tuple</em><em> of </em><em>str</em><em>, </em><em>default</em><em> (</em><em>'ees'</em><em>, </em><em>'eeb'</em><em>, </em><em>'ies'</em><em>, </em><em>'ieb'</em><em>)</em>) – Display order of instrument rows.</p></li>
+<li><p><strong>show</strong> (<em>bool</em><em>, </em><em>default True</em>) – Whether to show the figure interactively.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em><em>, </em><em>default 'viridis'</em>) – Matplotlib colormap name.</p></li>
+<li><p><strong>y_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Global fallback overrides for axis/color limits. Per-instrument
+overrides from <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> take precedence; finally row-level
+percentile scaling is used when neither is provided.</p></li>
+<li><p><strong>y_max</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Global fallback overrides for axis/color limits. Per-instrument
+overrides from <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> take precedence; finally row-level
+percentile scaling is used when neither is provided.</p></li>
+<li><p><strong>z_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Global fallback overrides for axis/color limits. Per-instrument
+overrides from <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> take precedence; finally row-level
+percentile scaling is used when neither is provided.</p></li>
+<li><p><strong>z_max</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Global fallback overrides for axis/color limits. Per-instrument
+overrides from <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> take precedence; finally row-level
+percentile scaling is used when neither is provided.</p></li>
+<li><p><strong>global_extrema</strong> (<em>dict</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Mapping containing precomputed extrema keys (<code class="docutils literal notranslate"><span class="pre">{instrument}_{y_scale}_{z_scale}_{axis}_{min|max}</span></code>) used
+to supply per-instrument (row-specific) limits. This enables distinct
+y/z ranges for <code class="docutils literal notranslate"><span class="pre">ees</span></code>, <code class="docutils literal notranslate"><span class="pre">eeb</span></code>, <code class="docutils literal notranslate"><span class="pre">ies</span></code>, and <code class="docutils literal notranslate"><span class="pre">ieb</span></code> within the same
+figure, improving contrast when dynamic ranges differ.</p></li>
+<li><p><strong>y_min</strong> – Direct energy bounds override applied when <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> is not
+provided. Ignored per-instrument when <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> supplies
+instrument-specific keys.</p></li>
+<li><p><strong>y_max</strong> – Direct energy bounds override applied when <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> is not
+provided. Ignored per-instrument when <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> supplies
+instrument-specific keys.</p></li>
+<li><p><strong>z_min</strong> – Direct intensity scale overrides (see above re: <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code>).</p></li>
+<li><p><strong>z_max</strong> – Direct intensity scale overrides (see above re: <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code>).</p></li>
+<li><p><strong>global_extrema</strong> – Mapping containing precomputed extrema keys of the form
+<code class="docutils literal notranslate"><span class="pre">{instrument}_{y_scale}_{z_scale}_{axis}_{min|max}</span></code>. When present
+these take precedence over <code class="docutils literal notranslate"><span class="pre">y_min</span></code> / <code class="docutils literal notranslate"><span class="pre">y_max</span></code> / <code class="docutils literal notranslate"><span class="pre">z_min</span></code> /
+<code class="docutils literal notranslate"><span class="pre">z_max</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Figure and Canvas, or <code class="docutils literal notranslate"><span class="pre">(None,</span> <span class="pre">None)</span></code> if no datasets.</p>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Files that fail to load are logged and skipped; remaining instruments may</dt><dd><p>still render.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Energy bins are restricted to <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">4000]</span></code> (or overridden via <code class="docutils literal notranslate"><span class="pre">global_extrema</span></code></dt><dd><p>or explicit <code class="docutils literal notranslate"><span class="pre">y_min</span></code> / <code class="docutils literal notranslate"><span class="pre">y_max</span></code>).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">vmin</span></code>/<code class="docutils literal notranslate"><span class="pre">vmax</span></code> per row use 1st/99th percentiles for robust scaling unless</dt><dd><p><code class="docutils literal notranslate"><span class="pre">global_extrema</span></code> provides per-instrument <code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Each dataset row sets <code class="docutils literal notranslate"><span class="pre">y_label='Energy</span> <span class="pre">(eV)'</span></code> and <code class="docutils literal notranslate"><span class="pre">z_label='Counts'</span></code> by</dt><dd><p>default for clarity of physical units.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[Figure or None, FigureCanvasBase or None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.FAST_plot_pitch_angle_grid">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">FAST_plot_pitch_angle_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cdf_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered_orbits_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orbit_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_duration_minutes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_function_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_function_z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pitch_angle_categories</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#FAST_plot_pitch_angle_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.FAST_plot_pitch_angle_grid" title="Link to this definition">¶</a></dt>
+<dd><p>Plot a grid of ESA spectrograms collapsed by pitch-angle categories.</p>
+<p>Each row corresponds to a pitch-angle category (e.g., downgoing, upgoing,
+perpendicular, all). If orbit boundary timestamps are available for this
+instrument/orbit, a zoom column is added. Data are loaded from the CDF,
+oriented so that energy is the y-axis, and collapsed over pitch-angle via
+<code class="docutils literal notranslate"><span class="pre">FAST_COLLAPSE_FUNCTION</span></code> (<code class="docutils literal notranslate"><span class="pre">np.nansum</span></code> by default).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cdf_file_path</strong> (<em>str</em>) – Path to the instrument CDF file.</p></li>
+<li><p><strong>filtered_orbits_df</strong> (<em>pandas.DataFrame</em><em> or </em><em>None</em>) – DataFrame used to compute vertical lines for the <code class="docutils literal notranslate"><span class="pre">orbit_number</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, vertical lines are omitted.</p></li>
+<li><p><strong>orbit_number</strong> (<em>int</em><em> or </em><em>None</em>) – Orbit number used to compute and label vertical lines.</p></li>
+<li><p><strong>zoom_duration_minutes</strong> (<em>float</em><em>, </em><em>default 6.25</em>) – Window length (minutes) for the optional zoom column.</p></li>
+<li><p><strong>scale_function_y</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Y-axis scaling for the spectrogram.</p></li>
+<li><p><strong>scale_function_z</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Color scale for the spectrogram intensity.</p></li>
+<li><p><strong>pitch_angle_categories</strong> (<em>dict</em><em> or </em><em>None</em>) – Mapping of label -&gt; list of (min_deg, max_deg) ranges; if <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+defaults to standard four groups.</p></li>
+<li><p><strong>show</strong> (<em>bool</em><em>, </em><em>default True</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, display the plot; otherwise render off-screen.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em><em>, </em><em>default 'viridis'</em>) – Matplotlib colormap name.</p></li>
+<li><p><strong>y_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Optional explicit energy (y-axis) limits override. When <code class="docutils literal notranslate"><span class="pre">None</span></code> the
+default lower bound (0) and observed upper bound (&lt;=4000) subset is
+used. These overrides are typically provided by precomputed global
+extrema.</p></li>
+<li><p><strong>y_max</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Optional explicit energy (y-axis) limits override. When <code class="docutils literal notranslate"><span class="pre">None</span></code> the
+default lower bound (0) and observed upper bound (&lt;=4000) subset is
+used. These overrides are typically provided by precomputed global
+extrema.</p></li>
+<li><p><strong>z_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Optional explicit color (intensity) scale limits. When <code class="docutils literal notranslate"><span class="pre">None</span></code> the
+1st / 99th percentiles per row are used (robust to outliers). When
+provided (e.g., global extrema), they are applied uniformly across
+rows.</p></li>
+<li><p><strong>z_max</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Optional explicit color (intensity) scale limits. When <code class="docutils literal notranslate"><span class="pre">None</span></code> the
+1st / 99th percentiles per row are used (robust to outliers). When
+provided (e.g., global extrema), they are applied uniformly across
+rows.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Figure and Canvas for the grid, or <code class="docutils literal notranslate"><span class="pre">(None,</span> <span class="pre">None)</span></code> if no datasets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[Figure or None, FigureCanvasBase or None]</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Energy bins are filtered to <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">4000]</span></code> (or explicit <code class="docutils literal notranslate"><span class="pre">y_min</span></code> / <code class="docutils literal notranslate"><span class="pre">y_max</span></code>).</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">vmin</span></code>/<code class="docutils literal notranslate"><span class="pre">vmax</span></code> (row color bounds) are derived from 1st/99th percentiles</dt><dd><p>unless explicit <code class="docutils literal notranslate"><span class="pre">z_min</span></code> / <code class="docutils literal notranslate"><span class="pre">z_max</span></code> provided.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Each dataset row includes <code class="docutils literal notranslate"><span class="pre">y_label='Energy</span> <span class="pre">(eV)'</span></code> and <code class="docutils literal notranslate"><span class="pre">z_label='Counts'</span></code>;</dt><dd><p>modify after return if alternative units are desired.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>When no pitch-angle category yields data, the function logs a message and</dt><dd><p>returns <code class="docutils literal notranslate"><span class="pre">(None,</span> <span class="pre">None)</span></code>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.FAST_plot_spectrograms_directory">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">FAST_plot_spectrograms_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./FAST_data/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./FAST_plots/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'log'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_duration_minutes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('ees',</span> <span class="pre">'eeb',</span> <span class="pre">'ies',</span> <span class="pre">'ieb')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./batch_multi_plot_FAST_progress.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_progress_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_tqdm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orbit_timeout_seconds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_timeout_seconds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_timeouts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flush_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_flush_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_processing_percentile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">95.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#FAST_plot_spectrograms_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.FAST_plot_spectrograms_directory" title="Link to this definition">¶</a></dt>
+<dd><p>Batch process ESA spectrogram plots for all orbits in a directory.</p>
+<p>Discovers instrument CDF files (excluding filenames containing
+<code class="docutils literal notranslate"><span class="pre">&quot;_orb_&quot;</span></code>), groups them by orbit number, and processes each orbit in
+parallel worker processes for matplotlib safety. Progress is persisted to a
+JSON file to support resume and to record error/timeout orbits per y/z
+scale combo. Before scheduling orbit tasks a global extrema pass runs
+(<code class="docutils literal notranslate"><span class="pre">compute_global_extrema</span></code>) for the requested (y_scale, z_scale). For
+log scales, if a completed linear counterpart (same other-axis scale)
+exists, its maxima are reused and log-transformed with a floor (see
+<code class="docutils literal notranslate"><span class="pre">log_floor_cutoff</span></code> / <code class="docutils literal notranslate"><span class="pre">log_floor_value</span></code>) instead of rescanning files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory_path</strong> (<em>str</em><em>, </em><em>default FAST_CDF_DATA_FOLDER_PATH</em>) – Root folder containing CDF files.</p></li>
+<li><p><strong>output_base</strong> (<em>str</em><em>, </em><em>default FAST_OUTPUT_BASE</em>) – Base output directory for plots organized as
+<code class="docutils literal notranslate"><span class="pre">output_base/year/month/orbit</span></code>.</p></li>
+<li><p><strong>y_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'linear'</em>) – Y-axis scaling.</p></li>
+<li><p><strong>z_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default 'log'</em>) – Color scale for intensity.</p></li>
+<li><p><strong>zoom_duration_minutes</strong> (<em>float</em><em>, </em><em>default DEFAULT_ZOOM_WINDOW_MINUTES</em>) – Zoom window length for zoom columns.</p></li>
+<li><p><strong>instrument_order</strong> (<em>tuple</em><em> of </em><em>str</em><em>, </em><em>default</em><em> (</em><em>'ees'</em><em>, </em><em>'eeb'</em><em>, </em><em>'ies'</em><em>, </em><em>'ieb'</em><em>)</em>) – Display order for instrument grid.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>default True</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, prints additional batch messages.</p></li>
+<li><p><strong>progress_json_path</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>default FAST_PLOTTING_PROGRESS_JSON</em>) – Path to persist progress across runs.</p></li>
+<li><p><strong>ignore_progress_json</strong> (<em>bool</em><em>, </em><em>default False</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, don’t read previous progress before starting.</p></li>
+<li><p><strong>use_tqdm</strong> (<em>bool</em><em> or </em><em>None</em><em>, </em><em>default None</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, show a tqdm progress bar; if <code class="docutils literal notranslate"><span class="pre">None</span></code>, defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em><em>, </em><em>default 'viridis'</em>) – Matplotlib colormap name.</p></li>
+<li><p><strong>max_workers</strong> (<em>int</em><em>, </em><em>default 4</em>) – Max number of worker processes.</p></li>
+<li><p><strong>orbit_timeout_seconds</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>default 60</em>) – Total per-orbit timeout.</p></li>
+<li><p><strong>instrument_timeout_seconds</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>default 30</em>) – Per-instrument/grid timeout.</p></li>
+<li><p><strong>retry_timeouts</strong> (<em>bool</em><em>, </em><em>default True</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, retry timed-out orbits once after the initial pass.</p></li>
+<li><p><strong>flush_batch_size</strong> (<em>int</em><em>, </em><em>default 10</em>) – Batch size applied to both extrema JSON and progress JSON writes to
+reduce I/O. Values &lt; 1 are coerced to 1. Final partial batch always flushes.</p></li>
+<li><p><strong>log_flush_batch_size</strong> (<em>int</em><em> or </em><em>None</em><em>, </em><em>default None</em>) – Batch size for buffered logging. If None, defaults to <code class="docutils literal notranslate"><span class="pre">flush_batch_size</span></code>.</p></li>
+<li><p><strong>max_processing_percentile</strong> (<em>float</em><em>, </em><em>default 95.0</em>) – Upper percentile (0 &lt; p &lt;= 100) forwarded to the internal
+<code class="docutils literal notranslate"><span class="pre">compute_global_extrema</span></code> helper as <code class="docutils literal notranslate"><span class="pre">max_percentile</span></code>. Currently this
+percentile controls the pooled positive intensity (Z) maxima selection.
+Energy (Y) maxima continue to use a fixed 99% cumulative positive count
+coverage rule (hard-coded) – i.e., the smallest energy whose cumulative
+positive finite sample count reaches 99% of total positive samples. A
+future refactor may unify these so that <code class="docutils literal notranslate"><span class="pre">max_processing_percentile</span></code>
+also governs the Y coverage threshold.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result dictionaries from <code class="docutils literal notranslate"><span class="pre">FAST_process_single_orbit</span></code> (and any
+retries), in no particular order.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>KeyboardInterrupt</strong> – Raised immediately on SIGINT/SIGTERM to stop scheduling and terminate
+    workers.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Signal handling installs handlers that request shutdown, terminate child</dt><dd><p>processes, and raise <code class="docutils literal notranslate"><span class="pre">KeyboardInterrupt</span></code> promptly.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Progress JSON tracks last completed orbit per scale combo under key</dt><dd><p><code class="docutils literal notranslate"><span class="pre">f&quot;progress_{y_scale}_{z_scale}_last_orbit&quot;</span></code> and records error/timeout
+orbits under dedicated keys (including per-instrument).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>If <code class="docutils literal notranslate"><span class="pre">ignore_progress_json</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, progress is not read; writes are</dt><dd><p>still attempted.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>If <code class="docutils literal notranslate"><span class="pre">retry_timeouts</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, timed-out orbits are retried once with</dt><dd><p>a smaller pool.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">max_processing_percentile</span></code> only impacts intensity maxima today; Y</dt><dd><p>maxima coverage threshold is fixed at 99%.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.FAST_process_single_orbit">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">FAST_process_single_orbit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orbit_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_file_paths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered_orbits_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom_duration_minutes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_axis_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_axis_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colormap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_base_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orbit_timeout_seconds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_timeout_seconds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_extrema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#FAST_process_single_orbit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.FAST_process_single_orbit" title="Link to this definition">¶</a></dt>
+<dd><p>Process all plots for a single orbit with timeouts and deferred saving.</p>
+<p>For each available instrument, renders a pitch-angle grid, then renders a
+combined instrument grid. Figures are accumulated in memory and saved only
+if no timeout thresholds are exceeded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>orbit_number</strong> (<em>int</em>) – The orbit identifier.</p></li>
+<li><p><strong>instrument_file_paths</strong> (<em>dict</em><em> of </em><em>{str: str}</em>) – Mapping of instrument key to CDF file path.</p></li>
+<li><p><strong>filtered_orbits_dataframe</strong> (<em>pandas.DataFrame</em>) – DataFrame used to compute orbit boundary timestamps.</p></li>
+<li><p><strong>zoom_duration_minutes</strong> (<em>float</em>) – Zoom window length for zoomed plots.</p></li>
+<li><p><strong>y_axis_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em>) – Y-axis scaling.</p></li>
+<li><p><strong>z_axis_scale</strong> (<em>{'linear'</em><em>, </em><em>'log'}</em>) – Color scale for intensity.</p></li>
+<li><p><strong>instrument_order</strong> (<em>tuple</em><em> of </em><em>str</em>) – Order used in the instrument grid.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em>) – Matplotlib colormap.</p></li>
+<li><p><strong>output_base_directory</strong> (<em>str</em>) – Root folder for saving figures; year/month are inferred from the CDF
+path when possible, else <code class="docutils literal notranslate"><span class="pre">'unknown'</span></code>.</p></li>
+<li><p><strong>orbit_timeout_seconds</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>default 60</em>) – Maximum wall-clock seconds permitted for the entire orbit processing (summed).</p></li>
+<li><p><strong>instrument_timeout_seconds</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>default 30</em>) – Per-instrument rendering timeout; exceeded instruments are skipped and noted.</p></li>
+<li><p><strong>global_extrema</strong> (<em>dict</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Precomputed extrema mapping used to supply uniform axis limits to all
+instrument plots for deterministic scaling; produced by
+<code class="docutils literal notranslate"><span class="pre">compute_global_extrema</span></code>.</p></li>
+<li><p><strong>orbit_timeout_seconds</strong> – Max total time for this orbit; if exceeded, status becomes <code class="docutils literal notranslate"><span class="pre">'timeout'</span></code>
+and no figures are saved.</p></li>
+<li><p><strong>instrument_timeout_seconds</strong> – Max time per instrument (and for the instrument grid). Exceeding this
+aborts the orbit without saving.</p></li>
+<li><p><strong>global_extrema</strong> – Precomputed extrema dictionary (see <code class="docutils literal notranslate"><span class="pre">compute_global_extrema</span></code>) used
+to supply consistent per-instrument axis limits across all orbits.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result dictionary with keys:
+<code class="docutils literal notranslate"><span class="pre">orbit</span></code> (int), <code class="docutils literal notranslate"><span class="pre">status</span></code> (<code class="docutils literal notranslate"><span class="pre">'ok'</span></code>, <code class="docutils literal notranslate"><span class="pre">'error'</span></code>, or <code class="docutils literal notranslate"><span class="pre">'timeout'</span></code>),
+<code class="docutils literal notranslate"><span class="pre">errors</span></code> (list of str). On timeout, includes <code class="docutils literal notranslate"><span class="pre">timeout_type</span></code> and
+<code class="docutils literal notranslate"><span class="pre">timeout_instrument</span></code> when applicable.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Timing diagnostics are logged per instrument and for the grid.</p></li>
+<li><p>Exceptions during plotting/saving are logged; processing continues when
+safe. Figures are closed in all cases to free memory.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.configure_info_logger_batch">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">configure_info_logger_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#configure_info_logger_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.configure_info_logger_batch" title="Link to this definition">¶</a></dt>
+<dd><p>Configure the batch size for buffered info logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch_size</strong> (<em>int</em>) – Number of log entries to accumulate before an automatic flush.
+Values &lt; 1 disable buffering (flush every call).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.flush_info_logger_buffer">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">flush_info_logger_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#flush_info_logger_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.flush_info_logger_buffer" title="Link to this definition">¶</a></dt>
+<dd><p>Flush any buffered info/error log messages immediately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>force</strong> (<em>bool</em><em>, </em><em>default True</em>) – Present for future extensibility; currently ignored (always flushes).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.info_logger">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">info_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exception</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BaseException</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_trace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_flush</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#info_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.info_logger" title="Link to this definition">¶</a></dt>
+<dd><p>Unified logger for messages and exceptions.</p>
+<p>This helper formats a message with an optional exception, includes the
+exception class name when provided, and delegates to generic logging
+helpers from the base module (<code class="docutils literal notranslate"><span class="pre">log_message</span></code>/<code class="docutils literal notranslate"><span class="pre">log_error</span></code>). When
+<code class="docutils literal notranslate"><span class="pre">include_trace</span></code> is True and an exception is given, a traceback is also
+emitted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prefix</strong> (<em>str</em>) – Human-readable message prefix for the log line.</p></li>
+<li><p><strong>exception</strong> (<em>BaseException</em><em> or </em><em>None</em>) – Optional exception instance. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, only <code class="docutils literal notranslate"><span class="pre">prefix</span></code> is logged.</p></li>
+<li><p><strong>level</strong> (<em>{'error'</em><em>, </em><em>'message'}</em><em>, </em><em>default 'error'</em>) – Logging level. <code class="docutils literal notranslate"><span class="pre">'error'</span></code> routes to <code class="docutils literal notranslate"><span class="pre">log_error</span></code>; otherwise to
+<code class="docutils literal notranslate"><span class="pre">log_message</span></code>.</p></li>
+<li><p><strong>include_trace</strong> (<em>bool</em><em>, </em><em>default False</em>) – When <code class="docutils literal notranslate"><span class="pre">True</span></code> and <code class="docutils literal notranslate"><span class="pre">exception</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code>, include a formatted
+traceback after the primary log message.</p></li>
+<li><p><strong>force_flush</strong> (<em>bool</em><em>, </em><em>default False</em>) – When True, forces an immediate flush of the buffered log messages
+(including the current one) regardless of batch size.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If the underlying logging helpers fail (e.g., misconfigured), this
+function falls back to printing to stdout/stderr to avoid silent loss. When
+an exception is provided, messages are formatted as
+<code class="docutils literal notranslate"><span class="pre">&quot;{prefix}</span> <span class="pre">[&lt;ExceptionClass&gt;]:</span> <span class="pre">{exception}&quot;</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="batch_multi_plot_FAST_spectrograms.main">
+<span class="sig-prename descclassname"><span class="pre">batch_multi_plot_FAST_spectrograms.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/batch_multi_plot_FAST_spectrograms.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#batch_multi_plot_FAST_spectrograms.main" title="Link to this definition">¶</a></dt>
+<dd><p>Run the FAST batch plotter for all y/z scale combinations sequentially.</p>
+<p>Invokes <code class="docutils literal notranslate"><span class="pre">FAST_plot_spectrograms_directory</span></code> four times with combinations
+of linear/log y and z, using colormaps tailored for each.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>An interrupt during any run stops the sequence immediately without
+starting subsequent combinations.</p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Configurable Spectrograms</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Module Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.close_all_axes_and_clear"><code class="docutils literal notranslate"><span class="pre">close_all_axes_and_clear()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.configure_log_batch"><code class="docutils literal notranslate"><span class="pre">configure_log_batch()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.generic_batch_plot"><code class="docutils literal notranslate"><span class="pre">generic_batch_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.generic_plot_multirow_optional_zoom"><code class="docutils literal notranslate"><span class="pre">generic_plot_multirow_optional_zoom()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.generic_plot_spectrogram_set"><code class="docutils literal notranslate"><span class="pre">generic_plot_spectrogram_set()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.get_cdf_file_type"><code class="docutils literal notranslate"><span class="pre">get_cdf_file_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.get_cdf_var_shapes"><code class="docutils literal notranslate"><span class="pre">get_cdf_var_shapes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.get_timestamps_for_orbit"><code class="docutils literal notranslate"><span class="pre">get_timestamps_for_orbit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.get_variable_shape"><code class="docutils literal notranslate"><span class="pre">get_variable_shape()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.load_filtered_orbits"><code class="docutils literal notranslate"><span class="pre">load_filtered_orbits()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.log_error"><code class="docutils literal notranslate"><span class="pre">log_error()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.log_message"><code class="docutils literal notranslate"><span class="pre">log_message()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_spectrogram.make_spectrogram"><code class="docutils literal notranslate"><span class="pre">make_spectrogram()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.FAST_plot_instrument_grid"><code class="docutils literal notranslate"><span class="pre">FAST_plot_instrument_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.FAST_plot_pitch_angle_grid"><code class="docutils literal notranslate"><span class="pre">FAST_plot_pitch_angle_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.FAST_plot_spectrograms_directory"><code class="docutils literal notranslate"><span class="pre">FAST_plot_spectrograms_directory()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.FAST_process_single_orbit"><code class="docutils literal notranslate"><span class="pre">FAST_process_single_orbit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.configure_info_logger_batch"><code class="docutils literal notranslate"><span class="pre">configure_info_logger_batch()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.flush_info_logger_buffer"><code class="docutils literal notranslate"><span class="pre">flush_info_logger_buffer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.info_logger"><code class="docutils literal notranslate"><span class="pre">info_logger()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch_multi_plot_FAST_spectrograms.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="batching_and_logging.html">Batching and Buffered Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generic_batch_plotting.html">Generic Batch Spectrogram Plotting</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Configurable Spectrograms</a></li>
+      <li>Next: <a href="batching_and_logging.html" title="next chapter">Batching and Buffered Logging</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ev Hansen.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/modules.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

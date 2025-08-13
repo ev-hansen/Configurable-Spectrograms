@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Configurable Spectrograms &#8212; Configurable Spectrograms  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Module Reference" href="modules.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="configurable-spectrograms">
+<h1>Configurable Spectrograms<a class="headerlink" href="#configurable-spectrograms" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.close_all_axes_and_clear"><code class="docutils literal notranslate"><span class="pre">close_all_axes_and_clear()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.configure_log_batch"><code class="docutils literal notranslate"><span class="pre">configure_log_batch()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.generic_batch_plot"><code class="docutils literal notranslate"><span class="pre">generic_batch_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.generic_plot_multirow_optional_zoom"><code class="docutils literal notranslate"><span class="pre">generic_plot_multirow_optional_zoom()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.generic_plot_spectrogram_set"><code class="docutils literal notranslate"><span class="pre">generic_plot_spectrogram_set()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.get_cdf_file_type"><code class="docutils literal notranslate"><span class="pre">get_cdf_file_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.get_cdf_var_shapes"><code class="docutils literal notranslate"><span class="pre">get_cdf_var_shapes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.get_timestamps_for_orbit"><code class="docutils literal notranslate"><span class="pre">get_timestamps_for_orbit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.get_variable_shape"><code class="docutils literal notranslate"><span class="pre">get_variable_shape()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.load_filtered_orbits"><code class="docutils literal notranslate"><span class="pre">load_filtered_orbits()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.log_error"><code class="docutils literal notranslate"><span class="pre">log_error()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.log_message"><code class="docutils literal notranslate"><span class="pre">log_message()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_spectrogram.make_spectrogram"><code class="docutils literal notranslate"><span class="pre">make_spectrogram()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_FAST_spectrograms.FAST_plot_instrument_grid"><code class="docutils literal notranslate"><span class="pre">FAST_plot_instrument_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_FAST_spectrograms.FAST_plot_pitch_angle_grid"><code class="docutils literal notranslate"><span class="pre">FAST_plot_pitch_angle_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_FAST_spectrograms.FAST_plot_spectrograms_directory"><code class="docutils literal notranslate"><span class="pre">FAST_plot_spectrograms_directory()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_FAST_spectrograms.FAST_process_single_orbit"><code class="docutils literal notranslate"><span class="pre">FAST_process_single_orbit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_FAST_spectrograms.configure_info_logger_batch"><code class="docutils literal notranslate"><span class="pre">configure_info_logger_batch()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_FAST_spectrograms.flush_info_logger_buffer"><code class="docutils literal notranslate"><span class="pre">flush_info_logger_buffer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_FAST_spectrograms.info_logger"><code class="docutils literal notranslate"><span class="pre">info_logger()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#batch_multi_plot_FAST_spectrograms.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="batching_and_logging.html">Batching and Buffered Logging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#key-parameters">Key Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#design-guarantees">Design Guarantees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#operational-notes">Operational Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#error-categorization-in-progress-json">Error Categorization in Progress JSON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#example-usage-snippet">Example Usage Snippet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#tuning-recommendations">Tuning Recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#related-api-docstrings">Related API Docstrings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#per-instrument-per-row-overrides-fast-generic">Per-Instrument / Per-Row Overrides (FAST &amp; Generic)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#api-examples">API Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#axis-label-conventions">Axis Label Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batching_and_logging.html#intensity-percentile-vs-energy-coverage">Intensity Percentile vs Energy Coverage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generic_batch_plotting.html">Generic Batch Spectrogram Plotting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#key-public-functions">Key Public Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#batching-parameters">Batching Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#progress-json-schema-generic">Progress JSON Schema (Generic)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#error-handling">Error Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#implementation-notes">Implementation Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#axis-label-defaults">Axis Label Defaults</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generic_batch_plotting.html#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Configurable Spectrograms</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="batching_and_logging.html">Batching and Buffered Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generic_batch_plotting.html">Generic Batch Spectrogram Plotting</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="modules.html" title="next chapter">Module Reference</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ev Hansen.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

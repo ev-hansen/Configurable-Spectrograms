@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Batching and Buffered Logging &#8212; Configurable Spectrograms  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Generic Batch Spectrogram Plotting" href="generic_batch_plotting.html" />
+    <link rel="prev" title="Module Reference" href="modules.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="batching-and-buffered-logging">
+<h1>Batching and Buffered Logging<a class="headerlink" href="#batching-and-buffered-logging" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The FAST spectrogram batch utilities implement disk I/O reduction and resiliency
+through configurable batching for:</p>
+<ul class="simple">
+<li><p>Global extrema JSON persistence</p></li>
+<li><p>Plot progress JSON persistence</p></li>
+<li><p>Buffered info logging</p></li>
+</ul>
+</section>
+<section id="key-parameters">
+<h2>Key Parameters<a class="headerlink" href="#key-parameters" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">flush_batch_size</span></code> (default: 10)</dt><dd><p>Controls how many orbits worth of successful extrema / progress updates are
+accumulated in-memory before writing JSON changes to disk. A final flush
+always occurs at normal program termination to avoid data loss.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">log_flush_batch_size</span></code> (default: <code class="docutils literal notranslate"><span class="pre">flush_batch_size</span></code>)</dt><dd><p>Controls how many log records are buffered before being written. If
+unspecified, logging reuses <code class="docutils literal notranslate"><span class="pre">flush_batch_size</span></code>. A forced flush occurs at
+shutdown.</p>
+</dd>
+</dl>
+</section>
+<section id="design-guarantees">
+<h2>Design Guarantees<a class="headerlink" href="#design-guarantees" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>At most <code class="docutils literal notranslate"><span class="pre">flush_batch_size</span> <span class="pre">-</span> <span class="pre">1</span></code> orbit extrema updates are lost if the process
+is interrupted unexpectedly (e.g., SIGKILL, power loss).</p></li>
+<li><p>Progress JSON only writes when new orbit work was completed or on forced
+flush to minimize unnecessary disk churn.</p></li>
+<li><p>Buffered logging reduces filesystem sync frequency; logs are still flushed on
+completion or when the buffer reaches threshold.</p></li>
+</ul>
+</section>
+<section id="operational-notes">
+<h2>Operational Notes<a class="headerlink" href="#operational-notes" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Setting <code class="docutils literal notranslate"><span class="pre">flush_batch_size=1</span></code> restores per-orbit persistence (maximum safety,
+higher I/O volume).</p></li>
+<li><p>Very large batch sizes increase risk of lost in-memory work if the process
+terminates abnormally.</p></li>
+<li><p>For long-running jobs, consider future enhancements like time-based flushes
+(not implemented yet) if extremely sparse orbit completion rates occur.</p></li>
+</ul>
+</section>
+<section id="error-categorization-in-progress-json">
+<h2>Error Categorization in Progress JSON<a class="headerlink" href="#error-categorization-in-progress-json" title="Link to this heading">¶</a></h2>
+<p>Per-instrument keys record error categories using the pattern:
+<code class="docutils literal notranslate"><span class="pre">{instrument}_{y_scale}_{z_scale}_error-{reason}</span></code></p>
+<p>Common reasons include:
+* <code class="docutils literal notranslate"><span class="pre">timeout</span></code> - worker exceeded allotted time
+* <code class="docutils literal notranslate"><span class="pre">invalid-cdf</span></code> - structural or content issues in input CDF
+* <code class="docutils literal notranslate"><span class="pre">divide-by-zero</span></code> - numerical domain error
+* <code class="docutils literal notranslate"><span class="pre">plotting</span></code> - matplotlib/rendering failure
+* <code class="docutils literal notranslate"><span class="pre">generic</span></code> - any uncategorized exception</p>
+</section>
+<section id="example-usage-snippet">
+<h2>Example Usage Snippet<a class="headerlink" href="#example-usage-snippet" title="Link to this heading">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">batch_multi_plot_FAST_spectrograms</span><span class="w"> </span><span class="kn">import</span> <span class="n">FAST_plot_spectrograms_directory</span>
+
+<span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+    <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+    <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>          <span class="c1"># write extrema/progress every 10 orbits</span>
+    <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>      <span class="c1"># log buffer larger than JSON flush</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="tuning-recommendations">
+<h2>Tuning Recommendations<a class="headerlink" href="#tuning-recommendations" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>SSD / local FS: batch size 20-50 often reduces overhead further.</p></li>
+<li><p>Network / cloud drive: keep batch smaller (5-15) to limit at-risk data.</p></li>
+<li><p>Debug sessions: use <code class="docutils literal notranslate"><span class="pre">flush_batch_size=1</span></code> plus lower log batch for immediacy.</p></li>
+<li><p>Embedded / IDE environments: if keyboard shortcuts appear impaired, run
+with <code class="docutils literal notranslate"><span class="pre">install_signal_handlers=False</span></code> (generic) or rely on default behavior
+in FAST (handlers are now restored automatically after completion).</p></li>
+</ul>
+</section>
+<section id="related-api-docstrings">
+<h2>Related API Docstrings<a class="headerlink" href="#related-api-docstrings" title="Link to this heading">¶</a></h2>
+<p>Full parameter and behavior details are in the docstrings for:
+* <code class="docutils literal notranslate"><span class="pre">compute_global_extrema</span></code>
+* <code class="docutils literal notranslate"><span class="pre">FAST_plot_spectrograms_directory</span></code>
+* <code class="docutils literal notranslate"><span class="pre">FAST_plot_instrument_grid</span></code> (per-instrument overrides)</p>
+</section>
+<section id="per-instrument-per-row-overrides-fast-generic">
+<h2>Per-Instrument / Per-Row Overrides (FAST &amp; Generic)<a class="headerlink" href="#per-instrument-per-row-overrides-fast-generic" title="Link to this heading">¶</a></h2>
+<p>Both the FAST-specific and generic batch plotting pipelines accept <strong>row-level
+axis overrides</strong> via dataset dictionaries. For FAST multi-instrument grids this
+enables distinct energy (<code class="docutils literal notranslate"><span class="pre">y_min</span></code>/<code class="docutils literal notranslate"><span class="pre">y_max</span></code>) and intensity (<code class="docutils literal notranslate"><span class="pre">z_min</span></code>/<code class="docutils literal notranslate"><span class="pre">z_max</span></code>)
+ranges for <code class="docutils literal notranslate"><span class="pre">ees</span></code>, <code class="docutils literal notranslate"><span class="pre">eeb</span></code>, <code class="docutils literal notranslate"><span class="pre">ies</span></code>, and <code class="docutils literal notranslate"><span class="pre">ieb</span></code> so that one instrument with a
+high dynamic range does not wash out contrast for another.</p>
+<p>Example applying precomputed extrema per instrument:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">batch_multi_plot_FAST_spectrograms</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+  <span class="n">compute_global_extrema</span><span class="p">,</span> <span class="n">FAST_plot_spectrograms_directory</span>
+<span class="p">)</span>
+
+<span class="n">extrema</span> <span class="o">=</span> <span class="n">compute_global_extrema</span><span class="p">(</span>
+  <span class="n">directory_path</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+  <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+  <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
+  <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Each row in multi-instrument figures now receives its own limits</span>
+<span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+  <span class="n">directory_path</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+  <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+  <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
+  <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+  <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>In addition, pitch-angle category grids now attach per-row energy and color
+scale bounds (when provided) so categories with narrower relevant ranges retain
+visual detail.</p>
+</section>
+<section id="api-examples">
+<h2>API Examples<a class="headerlink" href="#api-examples" title="Link to this heading">¶</a></h2>
+<section id="minimal-plotting-run">
+<h3>Minimal Plotting Run<a class="headerlink" href="#minimal-plotting-run" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">batch_multi_plot_FAST_spectrograms</span><span class="w"> </span><span class="kn">import</span> <span class="n">FAST_plot_spectrograms_directory</span>
+
+<span class="c1"># Process all orbits with default batching (10) and logging</span>
+<span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>      <span class="c1"># path containing CDF files</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>    <span class="c1"># destination for generated figures</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="custom-batching-and-logging">
+<h3>Custom Batching and Logging<a class="headerlink" href="#custom-batching-and-logging" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+  <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
+  <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>          <span class="c1"># write extrema/progress every 25 orbits</span>
+  <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>      <span class="c1"># less frequent log writes</span>
+  <span class="n">max_workers</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>                <span class="c1"># increase parallelism</span>
+  <span class="n">orbit_timeout_seconds</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>     <span class="c1"># orbit-level timeout</span>
+  <span class="n">instrument_timeout_seconds</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="resuming-after-interruption">
+<h3>Resuming After Interruption<a class="headerlink" href="#resuming-after-interruption" title="Link to this heading">¶</a></h3>
+<p>If execution is interrupted, re-running with the same parameters resumes from the
+last recorded orbit per scale combination (unless <code class="docutils literal notranslate"><span class="pre">ignore_progress_json=True</span></code>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span>  <span class="c1"># continues where previous run left off</span>
+</pre></div>
+</div>
+<p>Forcing a Fresh Pass (ignoring prior progress):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">ignore_progress_json</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># disregard existing progress JSON</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="computing-refreshing-extrema-only">
+<h3>Computing / Refreshing Extrema Only<a class="headerlink" href="#computing-refreshing-extrema-only" title="Link to this heading">¶</a></h3>
+<p>You can call the internal extrema routine directly to precompute ranges without plotting:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">batch_multi_plot_FAST_spectrograms</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_global_extrema</span>  <span class="c1"># if re-exported</span>
+<span class="c1"># (If not publicly exported, call through the plotting module or duplicate logic.)</span>
+<span class="c1"># When calling directly you can still specify the intensity percentile as &#39;max_percentile&#39;.</span>
+<span class="c1"># The energy (Y) coverage threshold remains fixed at 99% of cumulative positive samples.</span>
+<span class="n">state</span> <span class="o">=</span> <span class="n">compute_global_extrema</span><span class="p">(</span>
+  <span class="n">directory_path</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+  <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+  <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
+  <span class="n">instrument_order</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="s2">&quot;eeb&quot;</span><span class="p">,</span> <span class="s2">&quot;ies&quot;</span><span class="p">,</span> <span class="s2">&quot;ieb&quot;</span><span class="p">),</span>
+  <span class="n">extrema_json_path</span><span class="o">=</span><span class="s2">&quot;FAST_calculated_extrema.json&quot;</span><span class="p">,</span>
+  <span class="n">max_percentile</span><span class="o">=</span><span class="mf">95.0</span><span class="p">,</span>      <span class="c1"># matches FAST_plot_spectrograms_directory default</span>
+  <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Updated extrema keys:&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_z_max&quot;</span><span class="p">)])</span>
+</pre></div>
+</div>
+</section>
+<section id="tight-loop-immediate-persistence">
+<h3>Tight Loop / Immediate Persistence<a class="headerlink" href="#tight-loop-immediate-persistence" title="Link to this heading">¶</a></h3>
+<p>Set <code class="docutils literal notranslate"><span class="pre">flush_batch_size=1</span></code> for maximum safety (higher I/O volume):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>       <span class="c1"># per-orbit JSON writes</span>
+  <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>   <span class="c1"># immediate log emission</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="high-throughput-bulk-mode">
+<h3>High-Throughput Bulk Mode<a class="headerlink" href="#high-throughput-bulk-mode" title="Link to this heading">¶</a></h3>
+<p>On fast local SSDs you can increase both batch sizes to reduce writes further:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+  <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+  <span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+<span class="n">max_processing_percentile</span><span class="o">=</span><span class="mf">97.5</span><span class="p">,</span>  <span class="c1"># use a different intensity percentile</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="axis-label-conventions">
+<h2>Axis Label Conventions<a class="headerlink" href="#axis-label-conventions" title="Link to this heading">¶</a></h2>
+<p>Both FAST-specific and generic plotting pipelines default to labeling the
+vertical (energy) axis as <code class="docutils literal notranslate"><span class="pre">Energy</span> <span class="pre">(eV)</span></code> and the colorbar as <code class="docutils literal notranslate"><span class="pre">Counts</span></code>. These
+defaults are injected into each dataset row (<code class="docutils literal notranslate"><span class="pre">y_label</span></code> / <code class="docutils literal notranslate"><span class="pre">z_label</span></code>) and can
+be overridden at dataset construction time to reflect alternative units (e.g.,
+<code class="docutils literal notranslate"><span class="pre">'Differential</span> <span class="pre">Energy</span> <span class="pre">Flux'</span></code>). Centralizing units in the dataset dictionaries
+maintains separation between physical semantics and the generic rendering code.</p>
+</section>
+<section id="intensity-percentile-vs-energy-coverage">
+<h2>Intensity Percentile vs Energy Coverage<a class="headerlink" href="#intensity-percentile-vs-energy-coverage" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">max_processing_percentile</span></code> (FAST) controls the intensity percentile used for
+color scale maxima during global extrema computation. Energy (Y-axis) coverage
+remains fixed at 99% of cumulative positive samples and is not currently user
+configurable. The generic module defers to per-row <code class="docutils literal notranslate"><span class="pre">vmin</span></code>/<code class="docutils literal notranslate"><span class="pre">vmax</span></code> or on-the-fly
+percentile selection inside <code class="docutils literal notranslate"><span class="pre">make_spectrogram</span></code> when bounds are omitted.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Configurable Spectrograms</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Batching and Buffered Logging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#key-parameters">Key Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design-guarantees">Design Guarantees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#operational-notes">Operational Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#error-categorization-in-progress-json">Error Categorization in Progress JSON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-usage-snippet">Example Usage Snippet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tuning-recommendations">Tuning Recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#related-api-docstrings">Related API Docstrings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#per-instrument-per-row-overrides-fast-generic">Per-Instrument / Per-Row Overrides (FAST &amp; Generic)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-examples">API Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#axis-label-conventions">Axis Label Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#intensity-percentile-vs-energy-coverage">Intensity Percentile vs Energy Coverage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generic_batch_plotting.html">Generic Batch Spectrogram Plotting</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="modules.html" title="previous chapter">Module Reference</a></li>
+      <li>Next: <a href="generic_batch_plotting.html" title="next chapter">Generic Batch Spectrogram Plotting</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ev Hansen.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/batching_and_logging.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
