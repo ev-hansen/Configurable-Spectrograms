@@ -1373,6 +1373,11 @@
 
         <span class="n">sorted_orbit_numbers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">orbit_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
+        <span class="c1"># Diagnostic: print instruments found for each orbit</span>
+        <span class="c1"># for orbit in sorted_orbit_numbers:</span>
+        <span class="c1">#     instruments_found = list(orbit_map[orbit].keys())</span>
+        <span class="c1">#     print(f&quot;[DEBUG] Orbit {orbit} has instruments: {instruments_found}&quot;)</span>
+
         <span class="c1"># Section: Accumulators (resumable, maxima never decrease)</span>
         <span class="c1"># energy_positive_counts_by_instrument -&gt; per-energy positive finite counts</span>
         <span class="c1"># positive_sample_arrays_by_instrument -&gt; positive intensity arrays for z</span>
@@ -1410,14 +1415,22 @@
             <span class="n">orbits_since_last_flush</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="mi">0</span>  <span class="c1"># count of orbits with updates since last disk flush</span>
             <span class="p">)</span>
+            <span class="c1"># Refactored: iterate by orbit, then by instrument</span>
+            <span class="n">last_orbit_global_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+            <span class="n">last_processed_orbit_val</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">last_orbit_global_key</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last_processed_orbit_val</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="n">last_processed_orbit</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">last_processed_orbit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">last_processed_orbit_val</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">orbit_number</span> <span class="ow">in</span> <span class="n">sorted_orbit_numbers</span><span class="p">:</span>
-                <span class="n">orbit_had_any_updates</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="kc">False</span>  <span class="c1"># track whether this orbit produced any new data</span>
-                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">orbit_number</span> <span class="o">&lt;=</span> <span class="n">last_processed_orbit</span><span class="p">:</span>
+                    <span class="k">continue</span>
                 <span class="k">for</span> <span class="n">instrument_name</span> <span class="ow">in</span> <span class="n">instrument_order</span><span class="p">:</span>
                     <span class="n">key_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="n">progress_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_extrema_progress&quot;</span>
-
+                    <span class="n">orbit_had_any_updates</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="kc">False</span>  <span class="c1"># track whether this orbit produced any new data</span>
+                    <span class="p">)</span>
                     <span class="c1"># Fetch prior progress entry for this instrument+scale combo (if any)</span>
                     <span class="n">raw_progress_entry</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">progress_key</span><span class="p">)</span>
@@ -1530,6 +1543,17 @@
                                 <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="n">total_for_inst</span><span class="p">,</span>
                                 <span class="s2">&quot;complete&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                             <span class="p">}</span>
+                            <span class="c1"># Remove instrument-specific last_orbit keys if present</span>
+                            <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="n">instrument_order</span><span class="p">:</span>
+                                <span class="n">inst_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+                                <span class="k">if</span> <span class="n">inst_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
+                                    <span class="n">extrema_state</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">inst_key</span><span class="p">)</span>
+                            <span class="n">last_orbit_global_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+                            <span class="n">extrema_state</span><span class="p">[</span><span class="n">last_orbit_global_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="nb">max</span><span class="p">(</span><span class="n">sorted_orbit_numbers</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">sorted_orbit_numbers</span>
+                                <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+                            <span class="p">)</span>
                             <span class="n">reuse_performed</span> <span class="o">=</span> <span class="kc">True</span>
                             <span class="n">info_logger</span><span class="p">(</span>
                                 <span class="sa">f</span><span class="s2">&quot;[EXTREMA] Reused linear extrema for log scaling instrument=</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2"> y_scale=</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2"> z_scale=</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -1544,8 +1568,9 @@
                     <span class="n">orbit_instrument_files</span> <span class="o">=</span> <span class="n">orbit_map</span><span class="p">[</span><span class="n">orbit_number</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                         <span class="n">instrument_name</span><span class="p">,</span> <span class="p">[]</span>
                     <span class="p">)</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">orbit_instrument_files</span><span class="p">:</span>
-                        <span class="k">continue</span>
+                    <span class="c1"># if not orbit_instrument_files:</span>
+                    <span class="c1">#     print(f&quot;[EXTREMA] Skipping instrument {instrument_name} for orbit {orbit_number}: no files found.&quot;)</span>
+                    <span class="c1">#     continue</span>
 
                     <span class="c1"># Section: Per-file ingestion &amp; collapse</span>
                     <span class="k">for</span> <span class="n">cdf_path</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">orbit_instrument_files</span><span class="p">):</span>
@@ -1783,25 +1808,31 @@
                             <span class="o">+</span> <span class="mi">1</span>
                             <span class="o">&gt;=</span> <span class="n">total_files_per_instrument</span><span class="p">[</span><span class="n">instrument_name</span><span class="p">],</span>
                         <span class="p">}</span>
+                        <span class="c1"># Remove instrument-specific last_orbit keys if present</span>
+                        <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="n">instrument_order</span><span class="p">:</span>
+                            <span class="n">inst_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+                            <span class="k">if</span> <span class="n">inst_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
+                                <span class="n">extrema_state</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">inst_key</span><span class="p">)</span>
+                        <span class="n">extrema_state</span><span class="p">[</span><span class="n">last_orbit_global_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">orbit_number</span>
 
                         <span class="c1"># Progress bar suffix: latest instrument + snapshot of maxima.</span>
                         <span class="k">try</span><span class="p">:</span>
                             <span class="n">extrema_progress_bar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span>
                                 <span class="n">inst</span><span class="o">=</span><span class="n">instrument_name</span><span class="p">,</span>
-                                <span class="n">y_max</span><span class="o">=</span><span class="n">merged_energy_max</span><span class="p">,</span>
-                                <span class="n">z_max</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">merged_intensity_max</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                <span class="n">orbit</span><span class="o">=</span><span class="n">orbit_number</span><span class="p">,</span>
                                 <span class="n">refresh</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                             <span class="p">)</span>
                         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">maxima_progress_postfix_exception</span><span class="p">:</span>
                             <span class="k">pass</span>
+                        <span class="c1"># Diagnostic print for test: print orbit number after finishing extrema for this orbit</span>
+                        <span class="c1"># print(f&quot;[EXTREMA] Finished extrema for orbit {orbit_number} instrument {instrument_name}&quot;)</span>
                     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">maxima_update_exception</span><span class="p">:</span>
                         <span class="n">info_logger</span><span class="p">(</span>
                             <span class="sa">f</span><span class="s2">&quot;[EXTREMA] Update failure inst=</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2"> orbit=</span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                             <span class="n">maxima_update_exception</span><span class="p">,</span>
                             <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
                         <span class="p">)</span>
-                <span class="c1"># Section: Batched flush decision</span>
-                <span class="k">if</span> <span class="n">orbit_had_any_updates</span><span class="p">:</span>
+                    <span class="c1"># Section: Batched flush decision</span>
                     <span class="n">orbits_since_last_flush</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="k">if</span> <span class="n">orbits_since_last_flush</span> <span class="o">&gt;=</span> <span class="n">flush_batch_size</span><span class="p">:</span>
                         <span class="k">try</span><span class="p">:</span>
@@ -1817,8 +1848,20 @@
             <span class="c1"># Section: Final flush if pending updates remain</span>
             <span class="k">if</span> <span class="n">orbits_since_last_flush</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
-                        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">,</span> <span class="n">file_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="c1"># Move the global last_orbit key to the top of the JSON</span>
+                    <span class="n">last_orbit_global_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+                    <span class="k">if</span> <span class="n">last_orbit_global_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
+                        <span class="n">ordered</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="n">last_orbit_global_key</span><span class="p">:</span> <span class="n">extrema_state</span><span class="p">[</span><span class="n">last_orbit_global_key</span><span class="p">]</span>
+                        <span class="p">}</span>
+                        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                            <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">last_orbit_global_key</span><span class="p">:</span>
+                                <span class="n">ordered</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
+                            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">ordered</span><span class="p">,</span> <span class="n">file_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
+                            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">,</span> <span class="n">file_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">final_flush_exception</span><span class="p">:</span>
                     <span class="n">info_logger</span><span class="p">(</span>
                         <span class="s2">&quot;[EXTREMA] Final batched flush failure&quot;</span><span class="p">,</span>
@@ -1830,6 +1873,14 @@
                 <span class="n">extrema_progress_bar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">maxima_update_exception_outer</span><span class="p">:</span>
                 <span class="k">pass</span>
+        <span class="c1"># Always return with the global last_orbit key first</span>
+        <span class="n">last_orbit_global_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+        <span class="k">if</span> <span class="n">last_orbit_global_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
+            <span class="n">ordered</span> <span class="o">=</span> <span class="p">{</span><span class="n">last_orbit_global_key</span><span class="p">:</span> <span class="n">extrema_state</span><span class="p">[</span><span class="n">last_orbit_global_key</span><span class="p">]}</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">last_orbit_global_key</span><span class="p">:</span>
+                    <span class="n">ordered</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">return</span> <span class="n">ordered</span>
         <span class="k">return</span> <span class="n">extrema_state</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_signal_handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>  <span class="c1"># frame unused</span>
@@ -1949,7 +2000,7 @@
     <span class="n">total_orbits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_orbits</span><span class="p">)</span>
 
     <span class="c1"># Progress and error tracking (per y/z scale combo)</span>
-    <span class="n">progress_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;progress_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+    <span class="n">progress_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
     <span class="n">error_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_error_plotting&quot;</span>
     <span class="n">progress_data</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">last_completed_orbit</span> <span class="o">=</span> <span class="kc">None</span>
@@ -2281,6 +2332,8 @@
                     <span class="n">_handle_completed_future</span><span class="p">(</span><span class="n">fut</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
                     <span class="n">processed_count</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="k">if</span> <span class="n">progress_bar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># Update the progress bar description/postfix with the current orbit number</span>
+                        <span class="n">progress_bar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">orbit</span><span class="o">=</span><span class="n">orbit_number</span><span class="p">)</span>
                         <span class="n">progress_bar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">progress_bar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -2516,42 +2569,22 @@
 <span class="sd">    starting subsequent combinations.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Use the batch-runner&#39;s own handlers; avoid top-level sys.exit to ensure clean shutdown</span>
-    <span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-        <span class="n">FAST_CDF_DATA_FOLDER_PATH</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-        <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-        <span class="n">use_tqdm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">colormap</span><span class="o">=</span><span class="n">DEFAULT_COLORMAP_LINEAR_Y_LINEAR_Z</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="c1"># If interrupted, exit without starting next scale combo</span>
-    <span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-        <span class="n">FAST_CDF_DATA_FOLDER_PATH</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-        <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
-        <span class="n">use_tqdm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">colormap</span><span class="o">=</span><span class="n">DEFAULT_COLORMAP_LINEAR_Y_LOG_Z</span><span class="p">,</span>
-        <span class="n">max_processing_percentile</span><span class="o">=</span><span class="mf">94.0</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-        <span class="n">FAST_CDF_DATA_FOLDER_PATH</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
-        <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-        <span class="n">use_tqdm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">colormap</span><span class="o">=</span><span class="n">DEFAULT_COLORMAP_LOG_Y_LINEAR_Z</span><span class="p">,</span>
-        <span class="n">max_processing_percentile</span><span class="o">=</span><span class="mf">94.0</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-        <span class="n">FAST_CDF_DATA_FOLDER_PATH</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
-        <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
-        <span class="n">use_tqdm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">colormap</span><span class="o">=</span><span class="n">DEFAULT_COLORMAP_LOG_Y_LOG_Z</span><span class="p">,</span>
-        <span class="n">max_processing_percentile</span><span class="o">=</span><span class="mf">94.0</span><span class="p">,</span>
-    <span class="p">)</span></div>
+    <span class="k">for</span> <span class="n">scale_combo</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">DEFAULT_COLORMAP_LINEAR_Y_LINEAR_Z</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="n">DEFAULT_COLORMAP_LINEAR_Y_LOG_Z</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">DEFAULT_COLORMAP_LOG_Y_LINEAR_Z</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="n">DEFAULT_COLORMAP_LOG_Y_LOG_Z</span><span class="p">),</span>
+    <span class="p">]:</span>
+        <span class="n">y_scale</span><span class="p">,</span> <span class="n">z_scale</span><span class="p">,</span> <span class="n">colormap</span> <span class="o">=</span> <span class="n">scale_combo</span>
+        <span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+            <span class="n">FAST_CDF_DATA_FOLDER_PATH</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">y_scale</span><span class="o">=</span><span class="n">y_scale</span><span class="p">,</span>
+            <span class="n">z_scale</span><span class="o">=</span><span class="n">z_scale</span><span class="p">,</span>
+            <span class="n">use_tqdm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">colormap</span><span class="o">=</span><span class="n">colormap</span><span class="p">,</span>
+            <span class="n">max_processing_percentile</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 
