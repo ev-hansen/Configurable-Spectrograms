@@ -1317,6 +1317,11 @@ def FAST_plot_spectrograms_directory(
 
         sorted_orbit_numbers = sorted(orbit_map.keys())
 
+        # Diagnostic: print instruments found for each orbit
+        # for orbit in sorted_orbit_numbers:
+        #     instruments_found = list(orbit_map[orbit].keys())
+        #     print(f"[DEBUG] Orbit {orbit} has instruments: {instruments_found}")
+
         # Section: Accumulators (resumable, maxima never decrease)
         # energy_positive_counts_by_instrument -> per-energy positive finite counts
         # positive_sample_arrays_by_instrument -> positive intensity arrays for z
@@ -1354,14 +1359,22 @@ def FAST_plot_spectrograms_directory(
             orbits_since_last_flush = (
                 0  # count of orbits with updates since last disk flush
             )
+            # Refactored: iterate by orbit, then by instrument
+            last_orbit_global_key = f"{y_scale}_{z_scale}_last_orbit"
+            last_processed_orbit_val = extrema_state.get(last_orbit_global_key, -1)
+            if not isinstance(last_processed_orbit_val, (int, float)):
+                last_processed_orbit = -1
+            else:
+                last_processed_orbit = int(last_processed_orbit_val)
             for orbit_number in sorted_orbit_numbers:
-                orbit_had_any_updates = (
-                    False  # track whether this orbit produced any new data
-                )
+                if orbit_number <= last_processed_orbit:
+                    continue
                 for instrument_name in instrument_order:
                     key_prefix = f"{instrument_name}_{y_scale}_{z_scale}"
                     progress_key = f"{key_prefix}_extrema_progress"
-
+                    orbit_had_any_updates = (
+                        False  # track whether this orbit produced any new data
+                    )
                     # Fetch prior progress entry for this instrument+scale combo (if any)
                     raw_progress_entry = (
                         extrema_state.get(progress_key)
@@ -1474,6 +1487,17 @@ def FAST_plot_spectrograms_directory(
                                 "total": total_for_inst,
                                 "complete": True,
                             }
+                            # Remove instrument-specific last_orbit keys if present
+                            for inst in instrument_order:
+                                inst_key = f"{inst}_{y_scale}_{z_scale}_last_orbit"
+                                if inst_key in extrema_state:
+                                    extrema_state.pop(inst_key)
+                            last_orbit_global_key = f"{y_scale}_{z_scale}_last_orbit"
+                            extrema_state[last_orbit_global_key] = (
+                                max(sorted_orbit_numbers)
+                                if sorted_orbit_numbers
+                                else -1
+                            )
                             reuse_performed = True
                             info_logger(
                                 f"[EXTREMA] Reused linear extrema for log scaling instrument={instrument_name} y_scale={y_scale} z_scale={z_scale}",
@@ -1488,8 +1512,9 @@ def FAST_plot_spectrograms_directory(
                     orbit_instrument_files = orbit_map[orbit_number].get(
                         instrument_name, []
                     )
-                    if not orbit_instrument_files:
-                        continue
+                    # if not orbit_instrument_files:
+                    #     print(f"[EXTREMA] Skipping instrument {instrument_name} for orbit {orbit_number}: no files found.")
+                    #     continue
 
                     # Section: Per-file ingestion & collapse
                     for cdf_path in sorted(orbit_instrument_files):
@@ -1727,25 +1752,31 @@ def FAST_plot_spectrograms_directory(
                             + 1
                             >= total_files_per_instrument[instrument_name],
                         }
+                        # Remove instrument-specific last_orbit keys if present
+                        for inst in instrument_order:
+                            inst_key = f"{inst}_{y_scale}_{z_scale}_last_orbit"
+                            if inst_key in extrema_state:
+                                extrema_state.pop(inst_key)
+                        extrema_state[last_orbit_global_key] = orbit_number
 
                         # Progress bar suffix: latest instrument + snapshot of maxima.
                         try:
                             extrema_progress_bar.set_postfix(
                                 inst=instrument_name,
-                                y_max=merged_energy_max,
-                                z_max=f"{merged_intensity_max:.2e}",
+                                orbit=orbit_number,
                                 refresh=False,
                             )
                         except Exception as maxima_progress_postfix_exception:
                             pass
+                        # Diagnostic print for test: print orbit number after finishing extrema for this orbit
+                        # print(f"[EXTREMA] Finished extrema for orbit {orbit_number} instrument {instrument_name}")
                     except Exception as maxima_update_exception:
                         info_logger(
                             f"[EXTREMA] Update failure inst={instrument_name} orbit={orbit_number}",
                             maxima_update_exception,
                             level="message",
                         )
-                # Section: Batched flush decision
-                if orbit_had_any_updates:
+                    # Section: Batched flush decision
                     orbits_since_last_flush += 1
                     if orbits_since_last_flush >= flush_batch_size:
                         try:
@@ -1761,8 +1792,20 @@ def FAST_plot_spectrograms_directory(
             # Section: Final flush if pending updates remain
             if orbits_since_last_flush > 0:
                 try:
-                    with open(extrema_json_path, "w") as file_out:
-                        json.dump(extrema_state, file_out, indent=2)
+                    # Move the global last_orbit key to the top of the JSON
+                    last_orbit_global_key = f"{y_scale}_{z_scale}_last_orbit"
+                    if last_orbit_global_key in extrema_state:
+                        ordered = {
+                            last_orbit_global_key: extrema_state[last_orbit_global_key]
+                        }
+                        for k, v in extrema_state.items():
+                            if k != last_orbit_global_key:
+                                ordered[k] = v
+                        with open(extrema_json_path, "w") as file_out:
+                            json.dump(ordered, file_out, indent=2)
+                    else:
+                        with open(extrema_json_path, "w") as file_out:
+                            json.dump(extrema_state, file_out, indent=2)
                 except Exception as final_flush_exception:
                     info_logger(
                         "[EXTREMA] Final batched flush failure",
@@ -1774,6 +1817,14 @@ def FAST_plot_spectrograms_directory(
                 extrema_progress_bar.close()
             except Exception as maxima_update_exception_outer:
                 pass
+        # Always return with the global last_orbit key first
+        last_orbit_global_key = f"{y_scale}_{z_scale}_last_orbit"
+        if last_orbit_global_key in extrema_state:
+            ordered = {last_orbit_global_key: extrema_state[last_orbit_global_key]}
+            for k, v in extrema_state.items():
+                if k != last_orbit_global_key:
+                    ordered[k] = v
+            return ordered
         return extrema_state
 
     def _signal_handler(signum, frame):  # frame unused
@@ -1893,7 +1944,7 @@ def FAST_plot_spectrograms_directory(
     total_orbits = len(sorted_orbits)
 
     # Progress and error tracking (per y/z scale combo)
-    progress_key = f"progress_{y_scale}_{z_scale}_last_orbit"
+    progress_key = f"{y_scale}_{z_scale}_last_orbit"
     error_key = f"{y_scale}_{z_scale}_error_plotting"
     progress_data = {}
     last_completed_orbit = None
@@ -2225,6 +2276,8 @@ def FAST_plot_spectrograms_directory(
                     _handle_completed_future(fut, orbit_number)
                     processed_count += 1
                     if progress_bar is not None:
+                        # Update the progress bar description/postfix with the current orbit number
+                        progress_bar.set_postfix(orbit=orbit_number)
                         progress_bar.update(1)
         finally:
             if progress_bar is not None:
@@ -2457,42 +2510,22 @@ def main() -> None:
     starting subsequent combinations.
     """
     # Use the batch-runner's own handlers; avoid top-level sys.exit to ensure clean shutdown
-    FAST_plot_spectrograms_directory(
-        FAST_CDF_DATA_FOLDER_PATH,
-        verbose=False,
-        y_scale="linear",
-        z_scale="linear",
-        use_tqdm=True,
-        colormap=DEFAULT_COLORMAP_LINEAR_Y_LINEAR_Z,
-    )
-    # If interrupted, exit without starting next scale combo
-    FAST_plot_spectrograms_directory(
-        FAST_CDF_DATA_FOLDER_PATH,
-        verbose=False,
-        y_scale="linear",
-        z_scale="log",
-        use_tqdm=True,
-        colormap=DEFAULT_COLORMAP_LINEAR_Y_LOG_Z,
-        max_processing_percentile=94.0,
-    )
-    FAST_plot_spectrograms_directory(
-        FAST_CDF_DATA_FOLDER_PATH,
-        verbose=False,
-        y_scale="log",
-        z_scale="linear",
-        use_tqdm=True,
-        colormap=DEFAULT_COLORMAP_LOG_Y_LINEAR_Z,
-        max_processing_percentile=94.0,
-    )
-    FAST_plot_spectrograms_directory(
-        FAST_CDF_DATA_FOLDER_PATH,
-        verbose=False,
-        y_scale="log",
-        z_scale="log",
-        use_tqdm=True,
-        colormap=DEFAULT_COLORMAP_LOG_Y_LOG_Z,
-        max_processing_percentile=94.0,
-    )
+    for scale_combo in [
+        ("linear", "linear", DEFAULT_COLORMAP_LINEAR_Y_LINEAR_Z),
+        ("linear", "log", DEFAULT_COLORMAP_LINEAR_Y_LOG_Z),
+        ("log", "linear", DEFAULT_COLORMAP_LOG_Y_LINEAR_Z),
+        ("log", "log", DEFAULT_COLORMAP_LOG_Y_LOG_Z),
+    ]:
+        y_scale, z_scale, colormap = scale_combo
+        FAST_plot_spectrograms_directory(
+            FAST_CDF_DATA_FOLDER_PATH,
+            verbose=False,
+            y_scale=y_scale,
+            z_scale=z_scale,
+            use_tqdm=True,
+            colormap=colormap,
+            max_processing_percentile=90,
+        )
 
 
 # Section: Script entry point
