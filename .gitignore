@@ -11,3 +11,4 @@ docs/_build/
 batch_multi_plot_FAST_logfile_datetime.txt
 batch_multi_plot_logfile_datetime.txt
 __pycache__/
+requirements.in
