@@ -769,7 +769,7 @@ def FAST_process_single_orbit(
                 if fig_given is not None:
                     fname = (
                         f"{orbit_number}{cusp_tag}_pitch-angle_ESA_{inst_detected}"
-                        f"_y-{y_axis_scale}_z-{z_axis_scale}_given_extrema.png"
+                        f"_y-{y_axis_scale}_z-{z_axis_scale}_given_extrema-{colormap}.png"
                     )
                     out_path = os.path.join(output_dir, fname)
                     if not override_plots and os.path.exists(out_path):
@@ -801,7 +801,7 @@ def FAST_process_single_orbit(
                 if fig_raw is not None:
                     fname = (
                         f"{orbit_number}{cusp_tag}_pitch-angle_ESA_{inst_detected}"
-                        f"_y-{y_axis_scale}_z-{z_axis_scale}_raw.png"
+                        f"_y-{y_axis_scale}_z-{z_axis_scale}_raw-{colormap}.png"
                     )
                     out_path = os.path.join(output_dir, fname)
                     if not override_plots and os.path.exists(out_path):
@@ -857,7 +857,7 @@ def FAST_process_single_orbit(
                     global_extrema=global_extrema,
                 )
                 if fig_grid_given is not None:
-                    fname = f"{orbit_number}_instrument-grid_ESA_y-{y_axis_scale}_z-{z_axis_scale}_given_extrema.png"
+                    fname = f"{orbit_number}_instrument-grid_ESA_y-{y_axis_scale}_z-{z_axis_scale}_given_extrema-{colormap}.png"
                     out_path = os.path.join(output_dir, fname)
                     if not override_plots and os.path.exists(out_path):
                         info_logger(
@@ -887,7 +887,7 @@ def FAST_process_single_orbit(
                     global_extrema=None,
                 )
                 if fig_grid_raw is not None:
-                    fname = f"{orbit_number}_instrument-grid_ESA_y-{y_axis_scale}_z-{z_axis_scale}_raw.png"
+                    fname = f"{orbit_number}_instrument-grid_ESA_y-{y_axis_scale}_z-{z_axis_scale}_raw-{colormap}.png"
                     out_path = os.path.join(output_dir, fname)
                     if not override_plots and os.path.exists(out_path):
                         info_logger(
@@ -1051,7 +1051,7 @@ def FAST_plot_spectrograms_directory(
     log_flush_batch_size : int or None, default None
         Logging buffer batch size; defaults to ``flush_batch_size`` when None.
     max_processing_percentile : float or None, default None
-        Percentile (0–100] for pooled intensity (Z) maxima in
+        Percentile (0-100] for pooled intensity (Z) maxima in
         ``compute_global_extrema``. None skips the extrema pass and raw-only
         plots are produced. Energy (Y) maxima use a fixed 99% cumulative
         coverage rule regardless.
