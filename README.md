@@ -16,7 +16,7 @@ View documentation for batch_multi_plot file functions on [readthedocs](https://
 # Installation
 1) Make sure you have [git](https://git-scm.com/install/) installed
 2) [Install uv](https://docs.astral.sh/uv/getting-started/installation/) so that package versions can match the ones used in this repo
-3) navigate to your preferred destination folder in a command line or terminal and clone this repository with ``git clone https://github.com/ev-hansen/Configurable-Spectrograms.git`` 
+3) Navigate to your preferred destination folder in a command line or terminal and clone this repository with ``git clone https://github.com/ev-hansen/Configurable-Spectrograms.git`` 
 4) Run ``uv venv`` in the command line or terminal to create a virtual environment followed by ``uv pip install -r requirements.txt`` to install the required python packages
 5) You are now done installing and can use the python files
 
@@ -35,6 +35,7 @@ Script to download FAST CDF files directly from [NASA's CDAWeb](https://cdaweb.g
 
 - ``GUI_batch_download_plot_FAST.py``
 A GUI file using pyside6 based on material design to assist with batch downloading FAST EISA CDF files and batch plotting the EISA data with spectrograms. Uses ``FAST_CDF_download.py`` and ``batch_multi_plot_FAST_spectrograms.py``.
+This file can be run with ``uv run GUI_batch_download_plot_FAST.py`` while in this directory
 
 - ``FAST_Cusp_Indices.csv``
 CSV file (currently tab-seperated) containing indicies for when FAST CDF files indicate FAST was in the auroral cusp region, currently only covers 2000 and 2001
