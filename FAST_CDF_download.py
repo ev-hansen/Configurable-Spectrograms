@@ -83,7 +83,3 @@ def FAST_ESA_CDF_download(
                                 total_length = int(total_length)
                                 for data in r.iter_content(chunk_size=4096):
                                     f.write(data)
-
-
-FAST_ESA_CDF_download(year=2000)
-FAST_ESA_CDF_download(year=2001)
