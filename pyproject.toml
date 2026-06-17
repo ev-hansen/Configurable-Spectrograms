@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Configurable_Spectrograms_ev-hansen"
+version = "0.0.2"
+authors = [
+  { name="Ev Hansen", email="ephansen@terpmail.umd.edu" },
+]
+description = "Files to create configurable spectrograms on a batch scale,with examples focusing on FAST EISA use."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "GPL-3.0"
+license-files = ["LICENSE"]
+dynamic = ["dependencies"]
+
+[tool.setuptools]
+packages = []
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.in"] }
+
+[project.urls]
+Homepage = "https://github.com/ev-hansen/Configurable-Spectrograms/"
+Issues = "https://github.com/ev-hansen/Configurable-Spectrograms/issues"
