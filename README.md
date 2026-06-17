@@ -13,6 +13,14 @@ View documentation for batch_multi_plot file functions on [readthedocs](https://
 
 **TODO**: *Upload example spectrogram plots from FAST data, upload script to find when FAST CDF files are in the auroral cusp and generate the ``FAST_Cusp_Indices.csv`` file, run said script on 2001 CDF files and update said ``.csv`` file, convert counts to flux for FAST plots, create script to sort (at least) FAST CDF data into the assumed folder layout of ``{FAST_CDF_DATA_FOLDER_PATH}/year/month``, think of a clever/fun/more memorable name*
 
+# Installation
+1) Make sure you have [git](https://git-scm.com/install/) installed
+2) [Install uv](https://docs.astral.sh/uv/getting-started/installation/) so that package versions can match the ones used in this repo
+3) navigate to your preferred destination folder in a command line or terminal and clone this repository with ``git clone https://github.com/ev-hansen/Configurable-Spectrograms.git`` 
+4) Run ``uv venv`` in the command line or terminal to create a virtual environment followed by ``uv pip install -r requirements.txt`` to install the required python packages
+5) You are now done installing and can use the python files
+
+
 # Files
 ## General files
 - ``batch_multi_plot_spectrogram.py``
