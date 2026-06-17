@@ -1,7 +1,7 @@
 # Configurable-Spectrograms
 An attempt to make easily configurable spectrograms that allow batch folder processing of arbitrary data.
 
-View documentation on [readthedocs](https://configurable-spectrograms.readthedocs.io/en/latest/) or [github pages](https://ev-hansen.github.io/Configurable-Spectrograms/)
+View documentation for batch_multi_plot file functions on [readthedocs](https://configurable-spectrograms.readthedocs.io/en/latest/) or [github pages](https://ev-hansen.github.io/Configurable-Spectrograms/) (same contents)
 
 ## Notable features
 - batch processing over entire folders
