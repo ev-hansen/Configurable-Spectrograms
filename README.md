@@ -14,9 +14,11 @@ View documentation on [readthedocs](https://configurable-spectrograms.readthedoc
 **TODO**: *Upload example spectrogram plots from FAST data, upload script to find when FAST CDF files are in the auroral cusp and generate the ``FAST_Cusp_Indices.csv`` file, run said script on 2001 CDF files and update said ``.csv`` file, convert counts to flux for FAST plots, create script to sort (at least) FAST CDF data into the assumed folder layout of ``{FAST_CDF_DATA_FOLDER_PATH}/year/month``, think of a clever/fun/more memorable name*
 
 # Files
+## General files
 - ``batch_multi_plot_spectrogram.py``
 Python file providing functions to use to plot spectrograms in a configurable way
 
+## FAST-specific examples
 - ``batch_multi_plot_FAST_spectrograms.py``
 Python script implementing ``batch_multi_plot_spectrogram.py`` for use with FAST CDF data. Marked timestamps are when FAST is in the auroral cusp region, plots spectrograms for pitch angle ranges as well as all instruments, plots for the same "instrument" should be scaled the same in terms of y and z axes (e.g. all ies plots should have same min and max for energy and counts).
 
