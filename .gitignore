@@ -13,3 +13,6 @@ batch_multi_plot_logfile_datetime.txt
 __pycache__/
 requirements.in
 *.egg-info/
+uv.lock
+.venv/
+.micromamba/

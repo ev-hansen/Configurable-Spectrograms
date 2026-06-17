@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Files to create configurable spectrograms on a batch scale,with examples focusing on FAST EISA use."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
