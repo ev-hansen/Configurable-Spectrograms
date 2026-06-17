@@ -13,9 +13,9 @@ __credits__: list[list[str]] = [
     ["Marilia Samara", "Co-Mentor"],
 ]
 
-__date__: str = "2025-08-13"
+__date__: str = "2025-06-17"
 __status__: str = "Development"
-__version__: str = "0.0.1"
+__version__: str = "0.0.2"
 __license__: str = "GPL-3.0"
 
 import requests

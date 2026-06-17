@@ -58,7 +58,7 @@ from batch_multi_plot_spectrogram import (
     DEFAULT_ZOOM_WINDOW_MINUTES,
 )
 
-# FAST-specific paths
+# --- FAST-specific paths ---
 FAST_CDF_DATA_FOLDER_PATH = "./FAST_data/"
 FAST_FILTERED_ORBITS_CSV_PATH = "./FAST_Cusp_Indices.csv"
 FAST_PLOTTING_PROGRESS_JSON = "./batch_multi_plot_FAST_progress.json"
@@ -68,21 +68,19 @@ FAST_LOGFILE_DATETIME_PATH = "./batch_multi_plot_FAST_logfile_datetime.txt"
 FAST_COLLAPSE_FUNCTION = np.nansum
 CDF_VARIABLES = ["time_unix", "data", "energy", "pitch_angle"]
 
-# Colormaps for each axis-scaling combination (colorblind-friendly and visually distinct)
+# --- Colormaps for each axis-scaling combination (colorblind-friendly and visually distinct) ---
 DEFAULT_COLORMAP_LINEAR_Y_LINEAR_Z = "viridis"
 DEFAULT_COLORMAP_LINEAR_Y_LOG_Z = "cividis"
 DEFAULT_COLORMAP_LOG_Y_LINEAR_Z = "plasma"
 DEFAULT_COLORMAP_LOG_Y_LOG_Z = "inferno"
 
-# Buffered logging configuration
+# --- Buffered logging configuration ---
 INFO_LOG_BATCH_SIZE_DEFAULT = 10
 _INFO_LOG_BATCH_SIZE = INFO_LOG_BATCH_SIZE_DEFAULT
 _INFO_LOG_BUFFER: list[tuple[str, str]] = []
 
 
-# Module-level helpers
-
-
+# --- Module-level helpers ---
 def _load_or_create_logfile_datetime(path: str) -> str:
     """Read or create the persistent logfile datetime stamp."""
     if os.path.exists(path) and (text := Path(path).read_text().strip()):
@@ -181,9 +179,7 @@ def extract_orbit_and_instrument(cdf_path: str) -> tuple[int, str, str] | None:
     return (orbit_number, instrument_type, cdf_path)
 
 
-# Logging
-
-
+# --- Logging ---
 def configure_info_logger_batch(batch_size: int) -> None:
     """Set the buffered info logging batch size (values < 1 become 1)."""
     global _INFO_LOG_BATCH_SIZE
@@ -280,9 +276,7 @@ def _terminate_all_child_processes() -> None:
         pass
 
 
-# Plotting helpers
-
-
+# --- Plotting helpers ---
 def round_extrema(value: float | int, direction: str) -> float:
     """Round an extrema value to a clean significant-digit axis limit.
 
@@ -988,9 +982,7 @@ def FAST_process_single_orbit(
     return result
 
 
-# Batch driver
-
-
+# --- Batch driver ---
 def FAST_plot_spectrograms_directory(
     directory_path: str = FAST_CDF_DATA_FOLDER_PATH,
     output_base: str = FAST_OUTPUT_BASE,
@@ -2002,6 +1994,7 @@ def FAST_plot_spectrograms_directory(
     return results
 
 
+# --- Entry point ---
 def main() -> None:
     """Run the FAST batch plotter for all y/z scale combinations sequentially.
 
