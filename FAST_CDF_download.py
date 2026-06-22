@@ -100,14 +100,12 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--base_url",
-        nargs="*",
         help=f"base URL to get the files",
         default=FAST_ESA_BASE_URL,
     )
 
     parser.add_argument(
         "--year",
-        nargs="*",
         help=f"year of data to download.",
         default={DEFAULT_YEAR},
         choices=list(range(1996, 2009)),
@@ -116,7 +114,6 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--output_path",
-        nargs="*",
         help=f"path to save the files",
         default=DEFAULT_FOLDER,
     )
