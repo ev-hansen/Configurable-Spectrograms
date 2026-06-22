@@ -21,25 +21,32 @@ __license__: str = "GPL-3.0"
 import requests
 from bs4 import BeautifulSoup
 import os
+import sys
 from tqdm import tqdm
+import argparse
+
+FAST_ESA_BASE_URL: str = "https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2"
+INSTRUMENT_OPTIONS: set[str] = {
+    "eeb",
+    "ees",
+    "ieb",
+    "ies",
+}  # "esv" also an option for FAST
+DEFAULT_YEAR: int = 2000
+DEFAULT_FOLDER: str = "./FAST_data/"
 
 
 def FAST_ESA_CDF_download(
-    base_url: str = "https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2",
-    instruments: set[str] = {
-        "ees",
-        "ies",
-        "eeb",
-        "ieb",
-    },  # consider eeb, ieb - higher res, larger files
-    year: int = 2000,
-    data_folder: str = "./FAST_data/",
+    base_url: str = FAST_ESA_BASE_URL,
+    year: int = DEFAULT_YEAR,
+    data_folder: str = DEFAULT_FOLDER,
+    instruments: set[str] = INSTRUMENT_OPTIONS,
 ) -> None:
     """Automates process of downloading CDF files of FAST data
 
     Args:
         base_url (str, optional): _description_. Defaults to "https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2".
-        instruments (set[str], optional): _description_. Defaults to {"ees", "ies"}.
+        instruments (set[str], optional): _description_. Defaults to {"eeb", "ees", "ieb", "ies"}.
         year (int, optional): _description_. Defaults to 2000.
         data_folder (str, optional): _description_. Defaults to "./FAST_data".
     """
@@ -56,6 +63,7 @@ def FAST_ESA_CDF_download(
             os.makedirs(fast_data_folder, exist_ok=True)
 
             # ees: https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2/ees/2000/01/
+            # eeb: https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2/eeb/2000/01/
             # ies: https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2/ies/2000/01/
             # ieb: https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2/ieb/2000/01/
             page: str = f"{base_url}/{instrument}/{year}/{web_folder}"
@@ -83,3 +91,53 @@ def FAST_ESA_CDF_download(
                                 total_length = int(total_length)
                                 for data in r.iter_content(chunk_size=4096):
                                     f.write(data)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Script to download FAST CDF files from CDA Web"
+    )
+
+    parser.add_argument(
+        "--base_url",
+        nargs="*",
+        help=f"base URL to get the files",
+        default=FAST_ESA_BASE_URL,
+    )
+
+    parser.add_argument(
+        "--year",
+        nargs="*",
+        help=f"year of data to download.",
+        default={DEFAULT_YEAR},
+        choices=list(range(1996, 2009)),
+        type=int,
+    )
+
+    parser.add_argument(
+        "--output_path",
+        nargs="*",
+        help=f"path to save the files",
+        default=DEFAULT_FOLDER,
+    )
+
+    parser.add_argument(
+        "--instruments",
+        nargs="+",
+        help=f"instruments to download",
+        default=INSTRUMENT_OPTIONS,
+        choices=list(INSTRUMENT_OPTIONS),
+    )
+
+    args = parser.parse_args()
+
+    try:
+        FAST_ESA_CDF_download(
+            base_url=args.base_url,
+            year=args.year,
+            data_folder=args.output_path,
+            instruments=args.instruments,
+        )
+    except KeyboardInterrupt:
+        print("\n[INTERRUPT] Aborted by user.")
+        sys.exit(130)
