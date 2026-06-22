@@ -6,7 +6,7 @@ View documentation for batch_multi_plot file functions on [readthedocs](https://
 ## Notable features
 - batch processing over entire folders
 - different colormaps for different y- and z- axis scale combinations
-- ability to mark and plot zoom-ed in plots of the regions of interest, with configurable duration for said region
+- ability to mark and plot zoomed-in plots of the regions of interest, with configurable duration for said region
 - configurable y and z axes
 - progress saved mid-run in case scripts need to be interrupted
 - example usage for [FAST](https://web.archive.org/web/20250813172018/https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1996-049A) ion and electron ESA data sourced from downloaded [CDF](https://web.archive.org/web/20250813173821/https://cdf.gsfc.nasa.gov/) files 
@@ -22,21 +22,23 @@ View documentation for batch_multi_plot file functions on [readthedocs](https://
 
 
 # Files
-## General files
+## General-use Library
 - ``batch_multi_plot_spectrogram.py``
 Python file providing functions to use to plot spectrograms in a configurable way
 
-## FAST-specific examples
+## FAST-specific Scripts
 - ``batch_multi_plot_FAST_spectrograms.py``
-Python script implementing ``batch_multi_plot_spectrogram.py`` for use with FAST CDF data. Marked timestamps are when FAST is in the auroral cusp region, plots spectrograms for pitch angle ranges as well as all instruments, plots for the same "instrument" should be scaled the same in terms of y and z axes (e.g. all ies plots should have same min and max for energy and counts).
+Python script implementing ``batch_multi_plot_spectrogram.py`` for use with FAST EISA CDF data. Marked timestamps are when FAST is in the auroral cusp region, plots spectrograms for pitch angle ranges as well as all instruments, plots for the same "instrument" should be scaled the same in terms of y and z axes (e.g. all ies plots should have same min and max for energy and counts).
 
 - ``FAST_CDF_download.py``
-Script to download FAST CDF files directly from [NASA's CDAWeb](https://cdaweb.gsfc.nasa.gov/) without manually using the web interface.
+Script to download FAST EISA CDF files directly from [NASA's CDAWeb](https://cdaweb.gsfc.nasa.gov/) without manually using the web interface.
+This file can be run with ``uv run FAST_CDF_download.py`` while in this directory
 
 - ``GUI_batch_download_plot_FAST.py``
 A GUI file using pyside6 based on material design to assist with batch downloading FAST EISA CDF files and batch plotting the EISA data with spectrograms. Uses ``FAST_CDF_download.py`` and ``batch_multi_plot_FAST_spectrograms.py``.
 This file can be run with ``uv run GUI_batch_download_plot_FAST.py`` while in this directory
 
+### Misc Files for FAST Scripts
 - ``FAST_Cusp_Indices.csv``
 CSV file (currently tab-seperated) containing indicies for when FAST CDF files indicate FAST was in the auroral cusp region, currently only covers 2000 and 2001
 
