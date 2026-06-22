@@ -68,8 +68,11 @@ def FAST_ESA_CDF_download(
             # ieb: https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2/ieb/2000/01/
             page: str = f"{base_url}/{instrument}/{year}/{web_folder}"
 
+            print("STATUS: Loading page from CDA Web")
             response = requests.get(page)
             soup = BeautifulSoup(response.content, "html.parser")
+            
+            print("STATUS: gathering links")
             links = soup.find_all("a")  # Find all elements with the tag <a>
 
             print(f"{i}/{len(instruments)*12} | downloading files from: {page}")
