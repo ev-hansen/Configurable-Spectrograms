@@ -1036,7 +1036,8 @@ class PlotPage(QWidget):
             layout,
             "Use tqdm Progress Bar",
             "Enable tqdm",
-            "tqdm displays estimated plotting progress, but may negatively impact performance.",
+            "tqdm displays estimated plotting progress in the terminal, but may negatively" +
+            " impact performance. Without using tqdm, the plotting progress is not displayed",
             self.use_tqdm,
             lambda v: setattr(self, "use_tqdm", v),
         )
