@@ -17,8 +17,9 @@ View documentation for batch_multi_plot file functions on [readthedocs](https://
 1) Make sure you have [git](https://git-scm.com/install/) installed
 2) [Install uv](https://docs.astral.sh/uv/getting-started/installation/) so that package versions can match the ones used in this repo
 3) Navigate to your preferred destination folder in a command line or terminal and clone this repository with ``git clone https://github.com/ev-hansen/Configurable-Spectrograms.git``
-4) Run ``uv venv`` in the command line or terminal to create a virtual environment followed by ``uv pip install -r requirements.txt`` to install the required python packages
+4) Run ``uv venv --python 3.14.6`` in the command line or terminal to create a virtual environment followed by ``uv pip install -r requirements.in`` to install the required python packages
 5) You are now done installing and can use the python files in the specified directory.
+6) If you ever need to reset the environment for debug reasons and you are on mac or linux, run ``sh reset_uv.sh``
 
 
 # Files
