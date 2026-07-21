@@ -18,14 +18,15 @@ View documentation for batch_multi_plot file functions on [readthedocs](https://
 
     git clone https://github.com/ev-hansen/Configurable-Spectrograms.git
 4) In the same command line or terminal, run:
+```
+ uv venv --python 3.14.6; uv pip install -r requirements.in
+```
 
-    uv venv --python 3.14.6
-    uv pip install -r requirements.in
 5) You are now done installing and can use the python files in the specified directory.
 6) If you ever need to reset the environment for debug reasons and you are on mac or linux, run
-
-    sh reset_uv.sh
-
+```
+ sh reset_uv.sh
+```
 
 # Files
 ## General-use Library
@@ -36,27 +37,29 @@ Imported into other python files with ``import batch_multi_plot_spectrogram.py``
 ## FAST-specific Scripts
 - ``batch_multi_plot_FAST_spectrograms.py``
 Python script implementing ``batch_multi_plot_spectrogram.py`` for use with FAST EISA CDF data. Marked timestamps are when FAST is in the auroral cusp region, plots spectrograms for pitch angle ranges as well as all instruments, plots for the same "instrument" should be scaled the same in terms of y and z axes (e.g. all ies plots should have same min and max for energy and counts).
-This file can be run with
-
-    uv run batch_multi_plot_FAST_spectrograms.py
-
-along with arguments (or by modifying the file).
+This file can be run with the following, along with arguments (or by modifying the file).
+```
+ uv run batch_multi_plot_FAST_spectrograms.py
+```
 
 - ``FAST_CDF_download.py``
 Script to download FAST EISA CDF files directly from [NASA's CDAWeb](https://cdaweb.gsfc.nasa.gov/) without manually using the web interface.
 This file can be run with
-
-    uv run FAST_CDF_download.py
+```
+ uv run FAST_CDF_download.py
+```
 
 For more information, use
-
-    FAST_CDF_download.py --help
+```
+ FAST_CDF_download.py --help
+```
 
 - ``GUI_batch_download_plot_FAST.py``
 A GUI file using pyside6 based on material design to assist with batch downloading FAST EISA CDF files and batch plotting the EISA data with spectrograms. Uses ``FAST_CDF_download.py`` and ``batch_multi_plot_FAST_spectrograms.py``.
 This file can be run with
-
-    uv run GUI_batch_download_plot_FAST.py
+```
+ uv run GUI_batch_download_plot_FAST.py
+```
 
 ### Misc Files for FAST Scripts
 - [REQUIRED] ``FAST_Cusp_Indices.csv``
