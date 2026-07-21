@@ -71,7 +71,7 @@ def FAST_ESA_CDF_download(
             print("STATUS: Loading page from CDA Web")
             response = requests.get(page)
             soup = BeautifulSoup(response.content, "html.parser")
-            
+
             print("STATUS: gathering links")
             links = soup.find_all("a")  # Find all elements with the tag <a>
 

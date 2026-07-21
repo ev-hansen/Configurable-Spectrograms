@@ -58,7 +58,6 @@ import concurrent.futures
 import signal
 import sys
 
-
 # Section: Constants and Configuration
 # Directory containing CDF data files
 CDF_DATA_DIRECTORY = "./FAST_data/"

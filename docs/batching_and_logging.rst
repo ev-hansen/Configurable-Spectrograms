@@ -236,5 +236,3 @@ color scale maxima during global extrema computation. Energy (Y-axis) coverage
 remains fixed at 99% of cumulative positive samples and is not currently user
 configurable. The generic module defers to per-row ``vmin``/``vmax`` or on-the-fly
 percentile selection inside ``make_spectrogram`` when bounds are omitted.
-
-

@@ -518,4 +518,3 @@ sample orbit: 13616
 	eflux_byA_atE gave No records found for variable eflux_byA_atE
 	pitch_angle_median gave No records found for variable pitch_angle_median
 	energy_median gave No records found for variable energy_median
-

@@ -24,4 +24,3 @@ extend-select = ["E722"]
 [lint.per-file-ignores]
 # Uncomment to relax legacy archival code:
 # "backup of old files/*" = ["E722"]
-
