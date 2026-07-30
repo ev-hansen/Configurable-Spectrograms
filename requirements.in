@@ -8,7 +8,7 @@ pytest
 qt-material
 beautifulsoup4
 qt-material-icons
-requests==2.34.2
+requests>=2.34.2
 tqdm
 sphinx
 numpydoc
@@ -16,3 +16,4 @@ black
 blackdoc
 blacken-docs
 pre-commit
+pillow >= 12.3.0
