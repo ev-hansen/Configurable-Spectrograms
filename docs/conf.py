@@ -21,8 +21,9 @@ import os
 import sys
 from datetime import datetime
 
-# Add project root to sys.path
+# Add project root and the src/ package layout to sys.path
 sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../src"))
 
 project = "Configurable Spectrograms"
 author = "Ev Hansen"
@@ -48,6 +49,9 @@ autodoc_mock_imports = [
     "matplotlib",
     "tqdm",
     "pandas",
+    "requests",
+    "bs4",
+    "psutil",
 ]
 
 html_theme = "alabaster"
