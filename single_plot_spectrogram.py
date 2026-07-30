@@ -38,7 +38,7 @@ def render_single_spectrogram(
     y_scale: str = "linear",
     z_scale: str = "linear",
     colormap: str = "viridis",
-    cusp_marker_style: str = "line",
+    cusp_marker_style: str = "both",
     vertical_lines: list[float] | None = None,
 ) -> bool:
     """Render a single generic spectrogram from one CDF file and save it.
@@ -56,7 +56,7 @@ def render_single_spectrogram(
         Color scale for intensity.
     colormap : str, default 'viridis'
         Matplotlib colormap name.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Cusp-boundary marker style; see
         :mod:`configurable_spectrograms.cusp_marking`.
     vertical_lines : list of float or None, optional
@@ -99,7 +99,7 @@ def main() -> int:
     parser.add_argument("--y-scale", choices=("linear", "log"), default="linear")
     parser.add_argument("--z-scale", choices=("linear", "log"), default="linear")
     parser.add_argument("--colormap", default="viridis")
-    parser.add_argument("--cusp-style", choices=("line", "bracket"), default="line")
+    parser.add_argument("--cusp-style", choices=("line", "bracket", "both"), default="both")
     args = parser.parse_args()
 
     produced = render_single_spectrogram(

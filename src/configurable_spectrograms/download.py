@@ -54,9 +54,7 @@ def _list_instrument_page_files(page: str) -> list[str]:
     #     https://web.archive.org/web/20250630134956/https://stackoverflow.com/questions/68969647/download-all-files-with-extension-from-a-page
     response = requests.get(page)
     soup = BeautifulSoup(response.content, "html.parser")
-    return [
-        href for a in soup.find_all("a") if isinstance(href := a.get("href"), str) and ".cdf" in href
-    ]
+    return [href for a in soup.find_all("a") if isinstance(href := a.get("href"), str) and ".cdf" in href]
 
 
 def _matches_day(file_name: str, instrument: str, date_str: str) -> bool:

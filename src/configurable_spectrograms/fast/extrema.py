@@ -168,8 +168,7 @@ def compute_global_extrema(
     }
     positive_sample_arrays_by_instrument: dict[str, list[np.ndarray]] = {inst: [] for inst in instrument_order}
     total_files_per_instrument: dict[str, int] = {
-        inst: sum(1 for orb in sorted_orbit_numbers if inst in orbit_to_instruments[orb])
-        for inst in instrument_order
+        inst: sum(1 for orb in sorted_orbit_numbers if inst in orbit_to_instruments[orb]) for inst in instrument_order
     }
 
     total_discovered_files = sum(total_files_per_instrument.values())

@@ -41,7 +41,7 @@ def FAST_plot_spectrograms_directory(
     ignore_progress_json: bool = False,
     use_tqdm: bool | None = None,
     colormap: str = "viridis",
-    cusp_marker_style: str = "line",
+    cusp_marker_style: str = "both",
     cusp_marker_kwargs: dict | None = None,
     max_workers: int = 4,
     orbit_timeout_seconds: int | float = 60,
@@ -86,7 +86,7 @@ def FAST_plot_spectrograms_directory(
         Show a tqdm progress bar when True; defaults to False when None.
     colormap : str, default 'viridis'
         Matplotlib colormap name.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Cusp-boundary marker style forwarded to every orbit's plots.
     cusp_marker_kwargs : dict or None, optional
         Extra keyword arguments forwarded to the marker-drawing function.

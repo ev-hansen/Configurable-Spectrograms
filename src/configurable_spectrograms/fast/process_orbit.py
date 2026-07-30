@@ -28,7 +28,7 @@ def FAST_process_single_orbit(
     instrument_timeout_seconds: int | float = 30,
     global_extrema: dict[str, int | float] | None = None,
     override_plots: bool = True,
-    cusp_marker_style: str = "line",
+    cusp_marker_style: str = "both",
     cusp_marker_kwargs: dict | None = None,
 ) -> dict[str, Any]:
     """Process and save all ESA spectrogram plots for a single orbit.
@@ -70,7 +70,7 @@ def FAST_process_single_orbit(
         Precomputed extrema mapping (from ``compute_global_extrema``).
     override_plots : bool, default True
         If False, skip plotting when the output file already exists.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Cusp-boundary marker style forwarded to the plotting functions.
     cusp_marker_kwargs : dict or None, optional
         Extra keyword arguments forwarded to the marker-drawing function.
@@ -278,8 +278,7 @@ def FAST_process_single_orbit(
             timeout_triggered = True
             timeout_type = "orbit"
             log_exception(
-                f"[TIMEOUT] Orbit {orbit_number} exceeded {orbit_timeout_seconds:.0f}s total "
-                f"({orbit_elapsed:.2f}s).",
+                f"[TIMEOUT] Orbit {orbit_number} exceeded {orbit_timeout_seconds:.0f}s total ({orbit_elapsed:.2f}s).",
                 level="message",
             )
 

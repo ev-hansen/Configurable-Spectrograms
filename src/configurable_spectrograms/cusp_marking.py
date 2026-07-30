@@ -1,19 +1,20 @@
 """Cusp-boundary markers drawn onto a spectrogram axis.
 
-Two interchangeable styles are provided: the original double-line marker
-(:func:`draw_cusp_line_markers`) and a bracket marker
+Three interchangeable styles are provided: the original double-line marker
+(:func:`draw_cusp_line_markers`), a bracket marker
 (:func:`draw_cusp_bracket_marker`) that spans the cusp interval below the
-axis instead of drawing lines through the data.
+axis instead of drawing lines through the data, and a combination of both
+(:func:`draw_cusp_both_markers`).
 """
 
 
-def draw_cusp_line_markers(axis_object, marker_positions_plot, **kwargs) -> list:
-    """Draw a thick black line under a thinner red line at each marker position.
+def draw_cusp_line_markers(axis_object, marker_positions_plot, line_color: str = "red", **kwargs) -> list:
+    """Draw a thick black line under a thinner coloured line at each marker position.
 
     This is the original cusp-boundary marker style: for each position in
     ``marker_positions_plot`` a 4-pixel-wide black line is drawn first,
-    followed by a 2-pixel-wide red line on top, so the boundary remains
-    visible against both light and dark spectrogram data.
+    followed by a 2-pixel-wide line of *line_color* on top, so the boundary
+    remains visible against both light and dark spectrogram data.
 
     Parameters
     ----------
@@ -22,6 +23,10 @@ def draw_cusp_line_markers(axis_object, marker_positions_plot, **kwargs) -> list
     marker_positions_plot : list of float
         X positions, already converted to the axes' plotting units, marking
         cusp boundaries.
+    line_color : str, default 'red'
+        Color of the thinner top line; callers typically switch this to a
+        colormap-appropriate color (e.g. white on top of ``'turbo'``, whose
+        high end is already red) so it stays visible.
     **kwargs
         Accepted and ignored, so callers can pass a single ``**style_kwargs``
         dict regardless of which marker style is selected.
@@ -33,11 +38,9 @@ def draw_cusp_line_markers(axis_object, marker_positions_plot, **kwargs) -> list
     """
     artists = []
     for position in marker_positions_plot:
+        artists.append(axis_object.axvline(position, color="black", linestyle="-", linewidth=4, alpha=1.0, zorder=10))
         artists.append(
-            axis_object.axvline(position, color="black", linestyle="-", linewidth=4, alpha=1.0, zorder=10)
-        )
-        artists.append(
-            axis_object.axvline(position, color="red", linestyle="-", linewidth=2, alpha=1.0, zorder=11)
+            axis_object.axvline(position, color=line_color, linestyle="-", linewidth=2, alpha=1.0, zorder=11)
         )
     return artists
 
@@ -52,6 +55,7 @@ def draw_cusp_bracket_marker(
     caption_offset: float = 0.04,
     caption_fontsize: float | None = None,
     linewidth: float = 1.5,
+    **kwargs,
 ) -> list:
     """Draw a bracket spanning the cusp interval below the axis.
 
@@ -86,6 +90,10 @@ def draw_cusp_bracket_marker(
         Caption font size; uses the matplotlib default when ``None``.
     linewidth : float, default 1.5
         Bracket line width.
+    **kwargs
+        Accepted and ignored, so callers can pass a single ``**style_kwargs``
+        dict regardless of which marker style is selected (e.g. the
+        ``line_color`` used by :func:`draw_cusp_line_markers`).
 
     Returns
     -------
@@ -144,3 +152,34 @@ def draw_cusp_bracket_marker(
         )
         artists.append(text)
     return artists
+
+
+def draw_cusp_both_markers(axis_object, marker_positions_plot, **kwargs) -> list:
+    """Draw both the line and bracket cusp-boundary markers at once.
+
+    Combines :func:`draw_cusp_line_markers` and
+    :func:`draw_cusp_bracket_marker` at the same marker positions, so the
+    boundary is both drawn through the data (visible without needing to look
+    below the axis) and bracketed (showing the interval clearly even where
+    the line style is hard to distinguish from the surrounding data).
+
+    Parameters
+    ----------
+    axis_object : matplotlib.axes.Axes
+        Axes to draw onto.
+    marker_positions_plot : list of float
+        X positions, already converted to the axes' plotting units.
+    **kwargs
+        Forwarded to both :func:`draw_cusp_line_markers` and
+        :func:`draw_cusp_bracket_marker`; each ignores keyword arguments it
+        doesn't recognize (e.g. ``line_color`` is used only by the line
+        markers, ``color``/``bracket_y``/etc. only by the bracket marker).
+
+    Returns
+    -------
+    list
+        The combined matplotlib artists from both drawing functions.
+    """
+    return draw_cusp_line_markers(axis_object, marker_positions_plot, **kwargs) + draw_cusp_bracket_marker(
+        axis_object, marker_positions_plot, **kwargs
+    )

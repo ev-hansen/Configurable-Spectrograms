@@ -39,7 +39,7 @@ def render_single_pitch_angle_grid(
     y_scale: str = "linear",
     z_scale: str = "linear",
     colormap: str = "viridis",
-    cusp_marker_style: str = "line",
+    cusp_marker_style: str = "both",
 ) -> bool:
     """Render one CDF file's pitch-angle grid and save it to *output_path*.
 
@@ -56,7 +56,7 @@ def render_single_pitch_angle_grid(
         Axis scaling.
     colormap : str, default 'viridis'
         Matplotlib colormap name.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Cusp-boundary marker style.
 
     Returns
@@ -90,7 +90,7 @@ def render_single_instrument_grid(
     y_scale: str = "linear",
     z_scale: str = "linear",
     colormap: str = "viridis",
-    cusp_marker_style: str = "line",
+    cusp_marker_style: str = "both",
 ) -> bool:
     """Render one orbit's multi-instrument grid resolved from a data folder.
 
@@ -106,7 +106,7 @@ def render_single_instrument_grid(
         Axis scaling.
     colormap : str, default 'viridis'
         Matplotlib colormap name.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Cusp-boundary marker style.
 
     Returns
@@ -145,7 +145,7 @@ def main() -> int:
     parser.add_argument("--y-scale", choices=("linear", "log"), default="linear")
     parser.add_argument("--z-scale", choices=("linear", "log"), default="linear")
     parser.add_argument("--colormap", default="viridis")
-    parser.add_argument("--cusp-style", choices=("line", "bracket"), default="line")
+    parser.add_argument("--cusp-style", choices=("line", "bracket", "both"), default="both")
     args = parser.parse_args()
 
     if args.data_folder is not None and args.orbit is None:

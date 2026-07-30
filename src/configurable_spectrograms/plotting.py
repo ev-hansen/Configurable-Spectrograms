@@ -30,14 +30,22 @@ from configurable_spectrograms.constants import (  # noqa: E402
     PLOT_FIGURE_WIDTH_INCHES,
     TICK_LABEL_FONT_SIZE,
 )
-from configurable_spectrograms.cusp_marking import draw_cusp_bracket_marker, draw_cusp_line_markers  # noqa: E402
+from configurable_spectrograms.cusp_marking import (  # noqa: E402
+    draw_cusp_both_markers,
+    draw_cusp_bracket_marker,
+    draw_cusp_line_markers,
+)
 from configurable_spectrograms.logging_utils import log_message  # noqa: E402
 from configurable_spectrograms.percentile_utils import compute_percentile_bounds  # noqa: E402
 
 _CUSP_MARKER_DRAWERS = {
     "line": draw_cusp_line_markers,
     "bracket": draw_cusp_bracket_marker,
+    "both": draw_cusp_both_markers,
 }
+#: Colormaps whose high end is already red, so the cusp line marker's top
+#: line switches to white to stay visible against it.
+_RED_HEAVY_COLORMAPS = {"turbo"}
 
 
 def close_all_axes_and_clear(fig) -> None:
@@ -104,7 +112,7 @@ def make_spectrogram(
     axis_object=None,
     instrument_label=None,
     vertical_lines_unix=None,  # list of unix timestamps to mark
-    cusp_marker_style="line",
+    cusp_marker_style="both",
     cusp_marker_kwargs=None,
 ):
     """Plot a spectrogram by collapsing a 3D data array along an axis.
@@ -149,10 +157,11 @@ def make_spectrogram(
         Title string applied to the axes.
     vertical_lines_unix : list of float, optional
         UNIX timestamps to annotate with a cusp-boundary marker.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Marker style for ``vertical_lines_unix``: ``'line'`` reproduces the
         original double-line marker; ``'bracket'`` draws a bracket spanning
-        the boundary interval below the axis instead.
+        the boundary interval below the axis instead; ``'both'`` draws both
+        styles together.
     cusp_marker_kwargs : dict or None, optional
         Extra keyword arguments forwarded to the selected marker-drawing
         function (see :mod:`configurable_spectrograms.cusp_marking`).
@@ -363,8 +372,10 @@ def make_spectrogram(
             vertical_lines_plot = [v for v in vertical_lines_plot if x_min_plot <= v <= x_max_plot]
         else:
             vertical_lines_plot = [v for v in vertical_lines_unix if x_axis_plot[0] <= v <= x_axis_plot[-1]]
-        draw_marker = _CUSP_MARKER_DRAWERS.get(cusp_marker_style, draw_cusp_line_markers)
-        draw_marker(axis_object, vertical_lines_plot, **(cusp_marker_kwargs or {}))
+        draw_marker = _CUSP_MARKER_DRAWERS.get(cusp_marker_style, draw_cusp_both_markers)
+        marker_kwargs = dict(cusp_marker_kwargs or {})
+        marker_kwargs.setdefault("line_color", "white" if colormap in _RED_HEAVY_COLORMAPS else "red")
+        draw_marker(axis_object, vertical_lines_plot, **marker_kwargs)
 
     axis_object.tick_params(axis="both", which="major", labelsize=TICK_LABEL_FONT_SIZE, length=8, width=1)
     axis_object.tick_params(axis="both", which="minor", labelsize=TICK_LABEL_FONT_SIZE, length=5, width=1)
@@ -394,7 +405,7 @@ def generic_plot_spectrogram_set(
     y_max=None,
     z_min=None,
     z_max=None,
-    cusp_marker_style="line",
+    cusp_marker_style="both",
     cusp_marker_kwargs=None,
 ):
     """Plot a vertical stack of generic spectrograms.
@@ -435,7 +446,7 @@ def generic_plot_spectrogram_set(
         Global colorbar lower bound fallback.
     z_max : float, optional
         Global colorbar upper bound fallback.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Marker style forwarded to :func:`make_spectrogram`.
     cusp_marker_kwargs : dict or None, optional
         Extra keyword arguments forwarded to the marker-drawing function.
@@ -455,9 +466,7 @@ def generic_plot_spectrogram_set(
         dataset_y_max = dataset.get("y_max", y_max)
         dataset_z_min = dataset.get("z_min", z_min)
         dataset_z_max = dataset.get("z_max", z_max)
-        inferred_y_max = (
-            dataset["y"].max() if dataset_y_max is None and dataset.get("y") is not None else dataset_y_max
-        )
+        inferred_y_max = dataset["y"].max() if dataset_y_max is None and dataset.get("y") is not None else dataset_y_max
         make_spectrogram(
             x_axis_values=dataset["x"],
             y_axis_values=dataset["y"],
@@ -508,7 +517,7 @@ def generic_plot_multirow_optional_zoom(
     y_max=None,
     z_min=None,
     z_max=None,
-    cusp_marker_style="line",
+    cusp_marker_style="both",
     cusp_marker_kwargs=None,
 ):
     """Render a multi-row spectrogram grid with an optional zoom column.
@@ -554,7 +563,7 @@ def generic_plot_multirow_optional_zoom(
         Global override bounds applied uniformly when provided. Any per-row
         ``y_min`` / ``y_max`` / ``z_min`` / ``z_max`` in a dataset dict take
         precedence.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Marker style forwarded to :func:`make_spectrogram`.
     cusp_marker_kwargs : dict or None, optional
         Extra keyword arguments forwarded to the marker-drawing function.

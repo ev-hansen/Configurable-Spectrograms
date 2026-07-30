@@ -163,9 +163,7 @@ def build_module(source: str, path: Path) -> types.ModuleType:
 
         elif isinstance(node, ast.Assign):
             target_names = [name for t in node.targets for name in _target_names(t)]
-            all_simple = all(
-                isinstance(t, (ast.Name, ast.Tuple, ast.List)) for t in node.targets
-            )
+            all_simple = all(isinstance(t, (ast.Name, ast.Tuple, ast.List)) for t in node.targets)
             if all_simple and target_names and _immediately_safe(node.value, bound):
                 kept.append(node)
                 bound.update(target_names)
@@ -258,9 +256,7 @@ def main() -> int:
         elif attempted == 0:
             continue
         elif failed:
-            failures.append(
-                f"--- {display_name}: {failed}/{attempted} doctest(s) failed ---\n{detail}"
-            )
+            failures.append(f"--- {display_name}: {failed}/{attempted} doctest(s) failed ---\n{detail}")
         else:
             print(f"ok   {display_name}: {attempted} doctest(s) passed")
 

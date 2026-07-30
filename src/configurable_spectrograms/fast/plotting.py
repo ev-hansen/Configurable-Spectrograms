@@ -45,7 +45,7 @@ def FAST_plot_pitch_angle_grid(
     y_max: float | None = None,
     z_min: float | None = None,
     z_max: float | None = None,
-    cusp_marker_style: str = "line",
+    cusp_marker_style: str = "both",
     cusp_marker_kwargs: dict | None = None,
 ) -> tuple[Any, Any]:
     """Plot a grid of ESA spectrograms collapsed by pitch-angle categories.
@@ -81,7 +81,7 @@ def FAST_plot_pitch_angle_grid(
     z_min, z_max : float or None, optional
         Color scale limits; defaults to row-level 1st/99th percentiles when
         None.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Cusp-boundary marker style; see
         :mod:`configurable_spectrograms.cusp_marking`.
     cusp_marker_kwargs : dict or None, optional
@@ -189,7 +189,7 @@ def FAST_plot_instrument_grid(
     z_min: float | None = None,
     z_max: float | None = None,
     global_extrema: dict[str, int | float] | None = None,
-    cusp_marker_style: str = "line",
+    cusp_marker_style: str = "both",
     cusp_marker_kwargs: dict | None = None,
 ) -> tuple[Any, Any]:
     """Plot a multi-instrument ESA spectrogram grid for a single orbit.
@@ -227,7 +227,7 @@ def FAST_plot_instrument_grid(
         ``{instrument}_{y_scale}_{z_scale}_{axis}_{min|max}`` supplying
         per-instrument limits. Takes precedence over the direct ``y_min`` /
         ``y_max`` / ``z_min`` / ``z_max`` arguments.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Cusp-boundary marker style; see
         :mod:`configurable_spectrograms.cusp_marking`.
     cusp_marker_kwargs : dict or None, optional

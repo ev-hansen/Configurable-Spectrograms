@@ -22,7 +22,7 @@ def generic_batch_plot(
     y_scale: str = "linear",
     z_scale: str = "linear",
     colormap: str = "viridis",
-    cusp_marker_style: str = "line",
+    cusp_marker_style: str = "both",
     cusp_marker_kwargs: dict | None = None,
     max_workers: int = 2,
     progress_json_path: str = PLOTTING_PROGRESS_JSON_PATH,
@@ -60,7 +60,7 @@ def generic_batch_plot(
         Color scaling for all rows.
     colormap : str, default 'viridis'
         Matplotlib colormap name.
-    cusp_marker_style : {'line', 'bracket'}, default 'line'
+    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'
         Cusp-boundary marker style forwarded to ``generic_plot_spectrogram_set``.
     cusp_marker_kwargs : dict or None, optional
         Extra keyword arguments forwarded to the marker-drawing function.

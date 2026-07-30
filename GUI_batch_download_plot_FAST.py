@@ -11,10 +11,10 @@ Provides a PySide6 Material-Design interface with three pages:
   style, and noise percentile; delegates to
   ``batch_multi_plot_FAST_spectrograms.FAST_plot_spectrograms_directory``
   via a background QThread.
-- **Single Plot** — render one CDF file's pitch-angle grid, or one orbit's
-  multi-instrument grid from a data folder, without running a full batch;
-  delegates to ``configurable_spectrograms.fast.plotting`` via a background
-  QThread.
+- **Single Day** — render one CDF file's pitch-angle grid (defaults to
+  downloading by date and instrument), or one orbit's multi-instrument grid
+  from a data folder, without running a full batch; delegates to
+  ``configurable_spectrograms.fast.plotting`` via a background QThread.
 """
 
 from __future__ import annotations
@@ -81,7 +81,7 @@ COLORMAP_OPTIONS: tuple[str, ...] = (
     "inferno",
     "turbo",
 )
-CUSP_STYLE_OPTIONS: tuple[str, ...] = ("line", "bracket")
+CUSP_STYLE_OPTIONS: tuple[str, ...] = ("both", "line", "bracket")
 PLOT_MODE_OPTIONS: tuple[str, ...] = ("Single Instrument (pitch-angle grid)", "Full Orbit (instrument grid)")
 #: Full Orbit mode's three ways of supplying its instrument CDF files.
 DATA_SOURCE_OPTIONS: tuple[str, ...] = (
@@ -89,9 +89,15 @@ DATA_SOURCE_OPTIONS: tuple[str, ...] = (
     "Select Files (one per instrument)",
     "Download by Date",
 )
+#: Single Instrument mode's two ways of supplying its one CDF file.
+SINGLE_SOURCE_OPTIONS: tuple[str, ...] = ("Download by Date", "Select File")
 #: Instruments supported by FAST_plot_instrument_grid (matches DEFAULT_INSTRUMENT_ORDER).
 FULL_ORBIT_INSTRUMENTS: tuple[str, ...] = ("eeb", "ees", "ieb", "ies")
 DEFAULT_NOISE_PERCENTILE: float = 90.0
+#: Default CDF data folder (input or output) and plot output folder, so
+#: users with an existing local setup can hit Confirm without browsing.
+DEFAULT_CDF_FOLDER: str = "./FAST_data"
+DEFAULT_PLOT_FOLDER: str = "./FAST_plots"
 THEME_DARK, THEME_LIGHT = "dark_teal.xml", "light_purple.xml"
 PRIMARY: str = os.environ.get("QTMATERIAL_PRIMARYCOLOR", "#2196F3")
 ERROR: str = "#d32f2f"
@@ -141,7 +147,7 @@ def _single_plot_in_process(
     instrument_file_paths: dict[str, str],
     download_date: dt.date | None,
     download_instruments: set[str],
-    output_path: str,
+    output_folder: str,
     y_scale: str,
     z_scale: str,
     colormap: str,
@@ -149,18 +155,30 @@ def _single_plot_in_process(
 ) -> None:
     """Run inside a child process; imports kept local to avoid spawn overhead.
 
-    Renders exactly one figure -- either a single CDF's pitch-angle grid
-    (``mode == "single_instrument"``, orbit number auto-parsed from the
-    filename) or one orbit's multi-instrument grid (``mode == "full_orbit"``)
-    -- and saves it to *output_path*. Full Orbit mode resolves its instrument
-    CDF files according to *data_source*: ``"folder"`` discovers them from
+    Renders either a single CDF's pitch-angle grid (``mode ==
+    "single_instrument"``, orbit number auto-parsed from the filename) or
+    one orbit's multi-instrument grid (``mode == "full_orbit"``), saving
+    each figure under ``{output_folder}/{year}/{month}/{orbit}/``, matching
+    the batch plotting pipeline's directory hierarchy. ``data_source ==
+    "download"`` fetches *download_date* from CDA Web first, for
+    *download_instruments* -- for Single Instrument mode, every orbit pass
+    found that day for every selected instrument is plotted, each saved as
+    its own figure (one per instrument per orbit); for Full Orbit mode, all
+    Full Orbit instruments are fetched for one combined figure of the day's
+    shared orbit. Full Orbit mode's other sources resolve its instrument CDF
+    files without downloading: ``"folder"`` discovers them from
     *orbit_folder_path* and *orbit_number*; ``"files"`` uses the
-    caller-supplied *instrument_file_paths* directly; ``"download"`` fetches
-    *download_date* for *download_instruments* from CDA Web first.
+    caller-supplied *instrument_file_paths* directly.
     """
-    from configurable_spectrograms.cdf_utils import load_filtered_orbits
+    from configurable_spectrograms.cdf_utils import (
+        get_cdf_file_type,
+        get_timestamps_for_orbit,
+        load_fast_cdf_dataset,
+        load_filtered_orbits,
+    )
     from configurable_spectrograms.download import download_single_day_cdf
     from configurable_spectrograms.fast.orbit_discovery import (
+        _parse_year_month,
         discover_orbit_files,
         extract_orbit_and_instrument,
         resolve_orbit_from_files,
@@ -169,19 +187,59 @@ def _single_plot_in_process(
     from configurable_spectrograms.fast.plotting import FAST_plot_instrument_grid, FAST_plot_pitch_angle_grid
 
     filtered_orbits_df = load_filtered_orbits()
+
+    def _cusp_tag(file_path: str, orbit: int | None, instrument: str | None) -> str:
+        """Return "_cusp" when the orbit has cusp-boundary markers, else ""."""
+        if orbit is None or instrument is None:
+            return ""
+        try:
+            time_unix_array = load_fast_cdf_dataset(file_path)["times"]
+            has_lines = bool(get_timestamps_for_orbit(filtered_orbits_df, orbit, instrument, time_unix_array))
+        except Exception:
+            return ""
+        return "_cusp" if has_lines else ""
+
     if mode == "single_instrument":
-        parsed = extract_orbit_and_instrument(cdf_file_path)
-        resolved_orbit = parsed[0] if parsed is not None else None
-        fig, _canvas = FAST_plot_pitch_angle_grid(
-            cdf_file_path,
-            filtered_orbits_df=filtered_orbits_df,
-            orbit_number=resolved_orbit,
-            scale_function_y=y_scale,
-            scale_function_z=z_scale,
-            show=False,
-            colormap=colormap,
-            cusp_marker_style=cusp_marker_style,
-        )
+        if data_source == "download":
+            assert download_date is not None
+            instruments_to_download = sorted(download_instruments)
+            day_files = download_single_day_cdf(date=download_date, instruments=instruments_to_download)
+            files_to_plot = [path for instrument in instruments_to_download for path in day_files.get(instrument, [])]
+            if not files_to_plot:
+                names = ", ".join(i.upper() for i in instruments_to_download)
+                raise RuntimeError(f"No {names} CDF file found for {download_date.isoformat()}.")
+        else:
+            files_to_plot = [cdf_file_path]
+
+        saved_count = 0
+        for file_path in files_to_plot:
+            parsed = extract_orbit_and_instrument(file_path)
+            resolved_orbit = parsed[0] if parsed is not None else None
+            instrument_type = parsed[1] if parsed is not None else get_cdf_file_type(file_path)
+            fig, _canvas = FAST_plot_pitch_angle_grid(
+                file_path,
+                filtered_orbits_df=filtered_orbits_df,
+                orbit_number=resolved_orbit,
+                scale_function_y=y_scale,
+                scale_function_z=z_scale,
+                show=False,
+                colormap=colormap,
+                cusp_marker_style=cusp_marker_style,
+            )
+            if fig is None:
+                continue
+            year, month = _parse_year_month(file_path)
+            orbit_label = resolved_orbit if resolved_orbit is not None else "unknown"
+            output_dir = os.path.join(output_folder, str(year), str(month), str(orbit_label))
+            os.makedirs(output_dir, exist_ok=True)
+            cusp_tag = _cusp_tag(file_path, resolved_orbit, instrument_type)
+            fname = (
+                f"{orbit_label}{cusp_tag}_pitch-angle_ESA_{instrument_type}_y-{y_scale}_z-{z_scale}_raw-{colormap}.png"
+            )
+            fig.savefig(os.path.join(output_dir, fname), dpi=200)
+            saved_count += 1
+        if saved_count == 0:
+            raise RuntimeError("No data available to plot for the given input.")
     else:
         if data_source == "files":
             instrument_files = instrument_file_paths
@@ -205,9 +263,15 @@ def _single_plot_in_process(
             colormap=colormap,
             cusp_marker_style=cusp_marker_style,
         )
-    if fig is None:
-        raise RuntimeError("No data available to plot for the given input.")
-    fig.savefig(output_path, dpi=200)
+        if fig is None:
+            raise RuntimeError("No data available to plot for the given input.")
+        first_path = next(iter(instrument_files.values()), None)
+        year, month = _parse_year_month(first_path) if first_path else ("unknown", "unknown")
+        orbit_label = resolved_orbit if resolved_orbit is not None else "unknown"
+        output_dir = os.path.join(output_folder, str(year), str(month), str(orbit_label))
+        os.makedirs(output_dir, exist_ok=True)
+        fname = f"{orbit_label}_instrument-grid_ESA_y-{y_scale}_z-{z_scale}_raw-{colormap}.png"
+        fig.savefig(os.path.join(output_dir, fname), dpi=200)
 
 
 # --- Supplemental stylesheet ---
@@ -383,6 +447,24 @@ def _make_scroll_page(parent: QWidget) -> tuple[QVBoxLayout, QScrollArea]:
     return layout, scroll
 
 
+def _wrap_section(layout: QVBoxLayout) -> tuple[QWidget, QVBoxLayout]:
+    """Add a zero-margin container widget to *layout* and return it with its own inner layout.
+
+    Content built inside the returned inner layout (labels, rows, and their
+    ``addSpacing`` gaps) collapses to zero height when the container is
+    hidden via ``setVisible(False)`` -- unlike spacer items added directly
+    to a shared outer layout, which stay put regardless of sibling widget
+    visibility and leave a stranded gap. Callers that toggle a whole group
+    of widgets together should build that group inside one such container.
+    """
+    container = QWidget()
+    inner = QVBoxLayout(container)
+    inner.setContentsMargins(0, 0, 0, 0)
+    inner.setSpacing(0)
+    layout.addWidget(container)
+    return container, inner
+
+
 def _add_divider(layout: QVBoxLayout, before: int = 28, after: int = 24) -> None:
     """Insert a horizontal rule into *layout* with optional surrounding spacing.
 
@@ -468,6 +550,7 @@ def _folder_selector(
     click_fn,
     *,
     note: str | None = None,
+    initial: str | None = None,
 ) -> tuple[QPushButton, QLabel]:
     """Add a folder-selector button row to *layout* and return its widgets.
 
@@ -482,6 +565,10 @@ def _folder_selector(
         Slot invoked when the "Select Folder" button is clicked.
     note : str or None, optional
         Hint text rendered above the button row.
+    initial : str or None, optional
+        Pre-filled folder path shown (truncated) in the path label instead
+        of "No folder selected" -- e.g. a default folder so users with an
+        existing setup don't need to browse before confirming.
 
     Returns
     -------
@@ -506,7 +593,7 @@ def _folder_selector(
     row.addStretch()
     layout.addLayout(row)
     layout.addSpacing(6)
-    path_lbl = QLabel("No folder selected")
+    path_lbl = QLabel(_truncated_path(initial) if initial else "No folder selected")
     path_lbl.setObjectName("folderPath")
     layout.addWidget(path_lbl)
     return btn, path_lbl
@@ -827,8 +914,12 @@ class SinglePlotWorker(_BaseWorker):
         Calendar day to fetch (used when ``data_source == 'download'``).
     download_instruments : set of str
         Instrument codes to fetch (used when ``data_source == 'download'``).
-    output_path : str
-        Destination PNG file path.
+    output_folder : str
+        Root output folder; figures are saved under
+        ``{output_folder}/{year}/{month}/{orbit}/``, matching the batch
+        plotting pipeline's directory hierarchy. ``mode == 'single_instrument'``
+        with ``data_source == 'download'`` saves one figure per orbit pass
+        found that day, for every selected instrument.
     y_scale, z_scale : {'linear', 'log'}
         Axis scaling.
     colormap : str
@@ -849,7 +940,7 @@ class SinglePlotWorker(_BaseWorker):
         instrument_file_paths: dict[str, str],
         download_date: dt.date | None,
         download_instruments: set[str],
-        output_path: str,
+        output_folder: str,
         y_scale: str,
         z_scale: str,
         colormap: str,
@@ -865,7 +956,7 @@ class SinglePlotWorker(_BaseWorker):
         self.instrument_file_paths = instrument_file_paths
         self.download_date = download_date
         self.download_instruments = download_instruments
-        self.output_path = output_path
+        self.output_folder = output_folder
         self.y_scale = y_scale
         self.z_scale = z_scale
         self.colormap = colormap
@@ -886,7 +977,7 @@ class SinglePlotWorker(_BaseWorker):
                     instrument_file_paths=self.instrument_file_paths,
                     download_date=self.download_date,
                     download_instruments=self.download_instruments,
-                    output_path=self.output_path,
+                    output_folder=self.output_folder,
                     y_scale=self.y_scale,
                     z_scale=self.z_scale,
                     colormap=self.colormap,
@@ -1017,7 +1108,7 @@ class DownloadPage(QWidget):
         super().__init__(parent)
         self.given_instruments: set[str] = set()
         self.years: list[int] = []
-        self.data_folder: str = ""
+        self.data_folder: str = DEFAULT_CDF_FOLDER
         self._worker: DownloadWorker | None = None
         self._stop_requested: bool = False
         self._build_ui()
@@ -1062,7 +1153,9 @@ class DownloadPage(QWidget):
         layout.addLayout(year_grid)
         _add_divider(layout)
         _section_label(layout, "Output Folder")
-        self._folder_btn, self._folder_path_label = _folder_selector(layout, self._select_folder)
+        self._folder_btn, self._folder_path_label = _folder_selector(
+            layout, self._select_folder, initial=self.data_folder
+        )
         layout.addSpacing(8)
         self._status_label = QLabel("")
         self._status_label.setObjectName("statusLabel")
@@ -1190,10 +1283,10 @@ class DownloadPage(QWidget):
 class PlotPage(QWidget):
     """Page widget for generating FAST ESA spectrograms from local CDF files.
 
-    Provides folder pickers for data and output directories, toggles for
-    verbose logging and tqdm, combo boxes for axis scales and colormap, and a
-    linked slider/entry pair for the noise-cutoff percentile. A ``PlotWorker``
-    is spawned when the CTA is clicked.
+    Provides folder pickers for data and output directories, a verbose
+    logging toggle, combo boxes for axis scales and colormap, and a linked
+    slider/entry pair for the noise-cutoff percentile. A ``PlotWorker`` is
+    spawned when the CTA is clicked; it always runs with a tqdm progress bar.
 
     Parameters
     ----------
@@ -1203,12 +1296,11 @@ class PlotPage(QWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.FAST_CDF_data_folder_path: str = ""
-        self.output_plots_folder_path: str = ""
+        self.FAST_CDF_data_folder_path: str = DEFAULT_CDF_FOLDER
+        self.output_plots_folder_path: str = DEFAULT_PLOT_FOLDER
         self._worker: PlotWorker | None = None
         self._stop_requested: bool = False
         self.verbose: bool = False
-        self.use_tqdm: bool = True
         self.y_scale: str = SCALE_OPTIONS[1]
         self.z_scale: str = SCALE_OPTIONS[1]
         self.colormap: str = COLORMAP_OPTIONS[0]
@@ -1239,6 +1331,7 @@ class PlotPage(QWidget):
                 "Directory must follow the hierarchy:  /top_level_dir/year/month/  "
                 "(top_level_dir may be named anything)"
             ),
+            initial=self.FAST_CDF_data_folder_path,
         )
         _add_divider(layout)
         _section_label(layout, "Plot Output Folder", spacing=6)
@@ -1248,6 +1341,7 @@ class PlotPage(QWidget):
             note=(
                 "Output will follow the hierarchy:  /top_level_dir/year/month/  (top_level_dir may be named anything)"
             ),
+            initial=self.output_plots_folder_path,
         )
         _add_divider(layout)
         self._verbose_check = _add_toggle_section(
@@ -1257,16 +1351,6 @@ class PlotPage(QWidget):
             "Error logging will be more detailed but may be overwhelming for large batches.",
             self.verbose,
             lambda v: setattr(self, "verbose", v),
-        )
-        _add_divider(layout)
-        self._tqdm_check = _add_toggle_section(
-            layout,
-            "Use tqdm Progress Bar",
-            "Enable tqdm",
-            "tqdm displays estimated plotting progress in the terminal, but may negatively"
-            + " impact performance. Without using tqdm, the plotting progress is not displayed",
-            self.use_tqdm,
-            lambda v: setattr(self, "use_tqdm", v),
         )
         _add_divider(layout)
         _section_label(layout, "Energy Scaling")
@@ -1374,7 +1458,7 @@ class PlotPage(QWidget):
             self.y_scale,
             self.z_scale,
             self.verbose,
-            self.use_tqdm,
+            True,  # always use tqdm when running via the GUI
             self.colormap,
             self.max_processing_percentile,
             self.cusp_marker_style,
@@ -1451,15 +1535,17 @@ class PlotPage(QWidget):
 
 # --- Single plot page ---
 class SinglePlotPage(QWidget):
-    """Page widget for rendering a single FAST ESA spectrogram figure.
+    """Page widget for rendering FAST ESA spectrogram figures without a full batch.
 
     Two modes are supported: plotting one CDF file's pitch-angle grid
     (orbit number auto-parsed from the filename), or plotting one orbit's
-    multi-instrument grid. Full Orbit mode's instrument CDF files can come
-    from any of three sources: a data folder resolved by orbit number, CDF
-    files selected individually per instrument, or a calendar day fetched
-    from CDA Web on demand. A ``SinglePlotWorker`` is spawned when the CTA
-    is clicked.
+    multi-instrument grid. Single Instrument mode's CDF file can be picked
+    locally (one figure), or fetched for a chosen date and multiple
+    instruments (one figure per orbit pass per selected instrument). Full
+    Orbit mode's instrument CDF files can come from any of three sources: a
+    data folder resolved by orbit number, CDF files selected individually
+    per instrument, or a calendar day fetched from CDA Web on demand. A
+    ``SinglePlotWorker`` is spawned when the CTA is clicked.
 
     Parameters
     ----------
@@ -1471,13 +1557,16 @@ class SinglePlotPage(QWidget):
         super().__init__(parent)
         self.mode: str = "single_instrument"
         self.cdf_file_path: str = ""
+        self.single_source: str = "download"
+        self.single_download_date: dt.date = dt.date(2000, 1, 1)
+        self.single_download_instruments: set[str] = set()
         self.data_source: str = "folder"
-        self.orbit_folder_path: str = ""
+        self.orbit_folder_path: str = DEFAULT_CDF_FOLDER
         self.orbit_number: int | None = None
         self.instrument_file_paths: dict[str, str] = {}
         self.download_date: dt.date = dt.date(2000, 1, 1)
         self.download_instruments: set[str] = set()
-        self.output_path: str = ""
+        self.output_folder: str = DEFAULT_PLOT_FOLDER
         self._worker: SinglePlotWorker | None = None
         self._stop_requested: bool = False
         self.y_scale: str = SCALE_OPTIONS[1]
@@ -1491,13 +1580,15 @@ class SinglePlotPage(QWidget):
         layout, self._scroll = _make_scroll_page(self)
         _page_header(
             layout,
-            "Single Spectrogram Plot",
-            "Render one FAST ESA spectrogram figure without running a full batch. "
-            "Choose a single CDF file to plot its pitch-angle grid, or plot one "
-            "orbit's multi-instrument grid -- resolved from a data folder and "
-            "orbit number, from CDF files you select yourself (one per "
-            "instrument), or by downloading one calendar day directly from CDA "
-            "Web (1996-08-21 through 2009-05-04).",
+            "Single Day Plot",
+            "Render FAST ESA spectrogram figures without running a full batch. "
+            "For a single instrument's pitch-angle grid, select a local CDF file "
+            "for one figure, or download by date and instrument -- every orbit "
+            "pass that day is plotted for every selected instrument, each saved "
+            "as its own figure. For one orbit's multi-instrument grid, resolve "
+            "CDF files from a data folder and orbit number, select CDF files "
+            "yourself (one per instrument), or download one calendar day from "
+            "CDA Web. CDA Web coverage spans 1996-08-21 through 2009-05-04.",
         )
         _add_divider(layout)
         _section_label(layout, "Settings", spacing=20, point_size=17)
@@ -1507,7 +1598,17 @@ class SinglePlotPage(QWidget):
         layout.addWidget(self._mode_combo)
         _add_divider(layout)
 
-        self._file_section_label = _section_label(layout, "CDF File", spacing=6)
+        # -- Single Instrument mode's own "Data Source" switch: local file vs. download --
+        self._single_source_container, single_source_inner = _wrap_section(layout)
+        self._single_source_section_label = _section_label(single_source_inner, "Data Source", spacing=6)
+        self._single_source_combo = _make_combo(SINGLE_SOURCE_OPTIONS, SINGLE_SOURCE_OPTIONS[0])
+        self._single_source_combo.currentTextChanged.connect(self._on_single_source_changed)
+        single_source_inner.addWidget(self._single_source_combo)
+        single_source_inner.addSpacing(8)
+
+        # -- "file" sub-source: pick a local CDF file --
+        self._single_file_container, single_file_inner = _wrap_section(layout)
+        self._file_section_label = _section_label(single_file_inner, "CDF File", spacing=6)
         file_row = QHBoxLayout()
         file_row.setSpacing(12)
         file_row.setContentsMargins(0, 0, 0, 0)
@@ -1518,23 +1619,59 @@ class SinglePlotPage(QWidget):
         self._file_btn.clicked.connect(self._select_file)
         file_row.addWidget(self._file_btn)
         file_row.addStretch()
-        layout.addLayout(file_row)
-        layout.addSpacing(6)
+        single_file_inner.addLayout(file_row)
+        single_file_inner.addSpacing(6)
         self._file_path_label = QLabel("No file selected")
         self._file_path_label.setObjectName("folderPath")
-        layout.addWidget(self._file_path_label)
-        layout.addSpacing(8)
+        single_file_inner.addWidget(self._file_path_label)
+        single_file_inner.addSpacing(8)
 
-        self._source_section_label = _section_label(layout, "Data Source", spacing=6)
+        # -- "download" sub-source: date + multi-select instruments, fetched via CDA Web.
+        # Every orbit pass that day is plotted for every selected instrument, each saved
+        # as its own PNG under the output folder's year/month/orbit hierarchy. --
+        self._single_download_container, single_download_inner = _wrap_section(layout)
+        self._single_date_section_label = _section_label(single_download_inner, "Date", spacing=6)
+        self._single_date_edit = QDateEdit()
+        self._single_date_edit.setObjectName("percentileEntry")
+        self._single_date_edit.setCalendarPopup(True)
+        self._single_date_edit.setDisplayFormat("yyyy-MM-dd")
+        self._single_date_edit.setMinimumDate(QDate(1996, 8, 21))
+        self._single_date_edit.setMaximumDate(QDate(2009, 5, 4))
+        self._single_date_edit.setDate(QDate(2000, 1, 1))
+        self._single_date_edit.setFixedHeight(36)
+        self._single_date_edit.setMaximumWidth(160)
+        self._single_date_edit.dateChanged.connect(self._on_single_date_changed)
+        single_download_inner.addWidget(self._single_date_edit)
+        single_download_inner.addSpacing(8)
+        self._single_instrument_section_label = _section_label(single_download_inner, "Instrument Data", spacing=6)
+        single_chip_row = QHBoxLayout()
+        single_chip_row.setSpacing(8)
+        single_chip_row.setContentsMargins(0, 0, 0, 0)
+        self._single_instrument_chips: dict[str, ToggleChip] = {}
+        for instrument in FULL_ORBIT_INSTRUMENTS:
+            chip = ToggleChip(instrument)
+            chip.toggled.connect(self._update_single_download_instruments)
+            self._single_instrument_chips[instrument] = chip
+            single_chip_row.addWidget(chip)
+        single_chip_row.addStretch()
+        single_download_inner.addLayout(single_chip_row)
+        single_download_inner.addSpacing(8)
+
+        # -- Full Orbit mode's "Data Source" switch: folder / files / download --
+        self._full_source_container, full_source_inner = _wrap_section(layout)
+        self._source_section_label = _section_label(full_source_inner, "Data Source", spacing=6)
         self._source_combo = _make_combo(DATA_SOURCE_OPTIONS, DATA_SOURCE_OPTIONS[0])
         self._source_combo.currentTextChanged.connect(self._on_source_changed)
-        layout.addWidget(self._source_combo)
-        layout.addSpacing(8)
+        full_source_inner.addWidget(self._source_combo)
+        full_source_inner.addSpacing(8)
 
         # -- "folder" source: existing data-folder + orbit-number lookup --
-        self._folder_section_label = _section_label(layout, "FAST CDF Data Folder", spacing=6)
-        self._folder_btn, self._folder_path_label = _folder_selector(layout, self._select_folder)
-        self._orbit_section_label = _section_label(layout, "Orbit Number", spacing=6)
+        self._folder_container, folder_inner = _wrap_section(layout)
+        self._folder_section_label = _section_label(folder_inner, "FAST CDF Data Folder", spacing=6)
+        self._folder_btn, self._folder_path_label = _folder_selector(
+            folder_inner, self._select_folder, initial=self.orbit_folder_path
+        )
+        self._orbit_section_label = _section_label(folder_inner, "Orbit Number", spacing=6)
         self._orbit_entry = QLineEdit()
         self._orbit_entry.setObjectName("percentileEntry")
         self._orbit_entry.setPlaceholderText("e.g. 13312")
@@ -1542,18 +1679,12 @@ class SinglePlotPage(QWidget):
         self._orbit_entry.setFixedHeight(36)
         self._orbit_entry.setMaximumWidth(140)
         self._orbit_entry.textChanged.connect(self._on_orbit_number_changed)
-        layout.addWidget(self._orbit_entry)
-        layout.addSpacing(8)
-        self._folder_source_widgets: tuple[QWidget, ...] = (
-            self._folder_section_label,
-            self._folder_btn,
-            self._folder_path_label,
-            self._orbit_section_label,
-            self._orbit_entry,
-        )
+        folder_inner.addWidget(self._orbit_entry)
+        folder_inner.addSpacing(8)
 
         # -- "files" source: one file picker per instrument --
-        self._instrument_files_section_label = _section_label(layout, "Instrument CDF Files", spacing=6)
+        self._files_container, files_inner = _wrap_section(layout)
+        self._instrument_files_section_label = _section_label(files_inner, "Instrument CDF Files", spacing=6)
         self._instrument_file_btns: dict[str, QPushButton] = {}
         self._instrument_file_labels: dict[str, QLabel] = {}
         for instrument in FULL_ORBIT_INSTRUMENTS:
@@ -1567,23 +1698,19 @@ class SinglePlotPage(QWidget):
             inst_btn.clicked.connect(functools.partial(self._select_instrument_file, instrument))
             inst_row.addWidget(inst_btn)
             inst_row.addStretch()
-            layout.addLayout(inst_row)
-            layout.addSpacing(6)
+            files_inner.addLayout(inst_row)
+            files_inner.addSpacing(6)
             inst_label = QLabel("No file selected")
             inst_label.setObjectName("folderPath")
-            layout.addWidget(inst_label)
-            layout.addSpacing(6)
+            files_inner.addWidget(inst_label)
+            files_inner.addSpacing(6)
             self._instrument_file_btns[instrument] = inst_btn
             self._instrument_file_labels[instrument] = inst_label
-        layout.addSpacing(2)
-        self._files_source_widgets: tuple[QWidget, ...] = (
-            self._instrument_files_section_label,
-            *self._instrument_file_btns.values(),
-            *self._instrument_file_labels.values(),
-        )
+        files_inner.addSpacing(2)
 
         # -- "download" source: date + instrument chips, fetched via CDA Web --
-        self._download_date_section_label = _section_label(layout, "Date", spacing=6)
+        self._full_download_container, full_download_inner = _wrap_section(layout)
+        self._download_date_section_label = _section_label(full_download_inner, "Date", spacing=6)
         self._date_edit = QDateEdit()
         self._date_edit.setObjectName("percentileEntry")
         self._date_edit.setCalendarPopup(True)
@@ -1594,9 +1721,11 @@ class SinglePlotPage(QWidget):
         self._date_edit.setFixedHeight(36)
         self._date_edit.setMaximumWidth(160)
         self._date_edit.dateChanged.connect(self._on_date_changed)
-        layout.addWidget(self._date_edit)
-        layout.addSpacing(8)
-        self._download_instruments_section_label = _section_label(layout, "Instruments to Download", spacing=6)
+        full_download_inner.addWidget(self._date_edit)
+        full_download_inner.addSpacing(8)
+        self._download_instruments_section_label = _section_label(
+            full_download_inner, "Instruments to Download", spacing=6
+        )
         download_chip_row = QHBoxLayout()
         download_chip_row.setSpacing(8)
         download_chip_row.setContentsMargins(0, 0, 0, 0)
@@ -1607,14 +1736,8 @@ class SinglePlotPage(QWidget):
             self._download_instrument_chips[instrument] = chip
             download_chip_row.addWidget(chip)
         download_chip_row.addStretch()
-        layout.addLayout(download_chip_row)
-        layout.addSpacing(8)
-        self._download_source_widgets: tuple[QWidget, ...] = (
-            self._download_date_section_label,
-            self._date_edit,
-            self._download_instruments_section_label,
-            *self._download_instrument_chips.values(),
-        )
+        full_download_inner.addLayout(download_chip_row)
+        full_download_inner.addSpacing(8)
 
         _add_divider(layout)
         _section_label(layout, "Energy Scaling")
@@ -1637,22 +1760,16 @@ class SinglePlotPage(QWidget):
         self._cusp_style_combo.currentTextChanged.connect(lambda t: setattr(self, "cusp_marker_style", t))
         layout.addWidget(self._cusp_style_combo)
         _add_divider(layout)
-        _section_label(layout, "Output PNG File", spacing=6)
-        out_row = QHBoxLayout()
-        out_row.setSpacing(12)
-        out_row.setContentsMargins(0, 0, 0, 0)
-        self._output_btn = QPushButton("  Choose Output File")
-        self._output_btn.setIcon(QIcon(_colored_pixmap(MaterialIcon("save"), 24, "#ffffff")))
-        self._output_btn.setObjectName("folderBtn")
-        self._output_btn.setFixedHeight(38)
-        self._output_btn.clicked.connect(self._select_output_file)
-        out_row.addWidget(self._output_btn)
-        out_row.addStretch()
-        layout.addLayout(out_row)
-        layout.addSpacing(6)
-        self._output_path_label = QLabel("No output file selected")
-        self._output_path_label.setObjectName("folderPath")
-        layout.addWidget(self._output_path_label)
+        _section_label(layout, "Output Folder", spacing=6)
+        self._output_btn, self._output_path_label = _folder_selector(
+            layout,
+            self._select_output_folder,
+            note=(
+                "Output will follow the hierarchy:  /top_level_dir/year/month/orbit/  "
+                "(top_level_dir may be named anything)"
+            ),
+            initial=self.output_folder,
+        )
         layout.addSpacing(8)
 
         self._status_label = QLabel("")
@@ -1685,15 +1802,38 @@ class SinglePlotPage(QWidget):
     def _update_mode_visibility(self) -> None:
         """Show only the input widgets relevant to the current mode."""
         is_single = self.mode == "single_instrument"
-        for widget in (self._file_section_label, self._file_btn, self._file_path_label):
-            widget.setVisible(is_single)
-        for widget in (self._source_section_label, self._source_combo):
-            widget.setVisible(not is_single)
+        self._single_source_container.setVisible(is_single)
+        self._full_source_container.setVisible(not is_single)
         if is_single:
-            for widget in (*self._folder_source_widgets, *self._files_source_widgets, *self._download_source_widgets):
-                widget.setVisible(False)
+            self._folder_container.setVisible(False)
+            self._files_container.setVisible(False)
+            self._full_download_container.setVisible(False)
+            self._update_single_source_visibility()
         else:
+            self._single_file_container.setVisible(False)
+            self._single_download_container.setVisible(False)
             self._update_source_visibility()
+
+    def _on_single_source_changed(self, text: str) -> None:
+        """Switch Single Instrument mode's data-acquisition widgets to match the selected source."""
+        self.single_source = "download" if text == SINGLE_SOURCE_OPTIONS[0] else "file"
+        self._update_single_source_visibility()
+        self._check_ready()
+
+    def _update_single_source_visibility(self) -> None:
+        """Show only the container for Single Instrument mode's current data source."""
+        self._single_file_container.setVisible(self.single_source == "file")
+        self._single_download_container.setVisible(self.single_source == "download")
+
+    def _on_single_date_changed(self, qdate: QDate) -> None:
+        """Sync ``self.single_download_date`` from the Single Instrument date-edit widget."""
+        self.single_download_date = dt.date(qdate.year(), qdate.month(), qdate.day())
+        self._check_ready()
+
+    def _update_single_download_instruments(self) -> None:
+        """Sync ``self.single_download_instruments`` from the Single Instrument chip states."""
+        self.single_download_instruments = {n for n, c in self._single_instrument_chips.items() if c.isChecked()}
+        self._check_ready()
 
     def _on_source_changed(self, text: str) -> None:
         """Switch Full Orbit mode's data-acquisition widgets to match the selected source."""
@@ -1706,13 +1846,10 @@ class SinglePlotPage(QWidget):
         self._check_ready()
 
     def _update_source_visibility(self) -> None:
-        """Show only the data-acquisition widgets for the current Full Orbit data source."""
-        for widget in self._folder_source_widgets:
-            widget.setVisible(self.data_source == "folder")
-        for widget in self._files_source_widgets:
-            widget.setVisible(self.data_source == "files")
-        for widget in self._download_source_widgets:
-            widget.setVisible(self.data_source == "download")
+        """Show only the container for the current Full Orbit data source."""
+        self._folder_container.setVisible(self.data_source == "folder")
+        self._files_container.setVisible(self.data_source == "files")
+        self._full_download_container.setVisible(self.data_source == "download")
 
     def _select_file(self) -> None:
         """Open a file picker and store the selected CDF file path."""
@@ -1756,28 +1893,27 @@ class SinglePlotPage(QWidget):
         self.download_instruments = {n for n, c in self._download_instrument_chips.items() if c.isChecked()}
         self._check_ready()
 
-    def _select_output_file(self) -> None:
-        """Open a save-file picker and store the destination PNG path."""
-        path, _filter = QFileDialog.getSaveFileName(
-            self, "Choose Output PNG File", str(Path.home()), "PNG files (*.png)"
-        )
-        if path:
-            if not path.lower().endswith(".png"):
-                path += ".png"
-            self.output_path = path
-            self._output_path_label.setText(_truncated_path(path))
+    def _select_output_folder(self) -> None:
+        """Open a directory picker and store the plot output folder path."""
+        folder = QFileDialog.getExistingDirectory(self, "Select Output Folder", str(Path.home()))
+        if folder:
+            self.output_folder = folder
+            self._output_path_label.setText(_truncated_path(folder))
         self._check_ready()
 
     def _check_ready(self) -> None:
         """Enable the CTA only when the current mode/source's required inputs are set."""
         if self.mode == "single_instrument":
-            ready = bool(self.cdf_file_path and self.output_path)
+            if self.single_source == "download":
+                ready = bool(self.single_download_instruments and self.output_folder)
+            else:
+                ready = bool(self.cdf_file_path and self.output_folder)
         elif self.data_source == "files":
-            ready = bool(self.instrument_file_paths and self.output_path)
+            ready = bool(self.instrument_file_paths and self.output_folder)
         elif self.data_source == "download":
-            ready = bool(self.download_instruments and self.output_path)
+            ready = bool(self.download_instruments and self.output_folder)
         else:
-            ready = bool(self.orbit_folder_path and self.orbit_number is not None and self.output_path)
+            ready = bool(self.orbit_folder_path and self.orbit_number is not None and self.output_folder)
         self._cta_btn.setEnabled(ready)
 
     def _start_plot(self) -> None:
@@ -1786,16 +1922,24 @@ class SinglePlotPage(QWidget):
         self._stop_btn.setVisible(True)
         self._stop_requested = False
         self._set_status("Starting plotting…", PRIMARY)
+        if self.mode == "single_instrument" and self.single_source == "download":
+            data_source = "download"
+            download_date = self.single_download_date
+            download_instruments = set(self.single_download_instruments)
+        else:
+            data_source = self.data_source
+            download_date = self.download_date
+            download_instruments = set(self.download_instruments)
         self._worker = SinglePlotWorker(
             self.mode,
             self.cdf_file_path,
-            self.data_source,
+            data_source,
             self.orbit_folder_path,
             self.orbit_number,
             dict(self.instrument_file_paths),
-            self.download_date,
-            set(self.download_instruments),
-            self.output_path,
+            download_date,
+            download_instruments,
+            self.output_folder,
             self.y_scale,
             self.z_scale,
             self.colormap,
@@ -1864,12 +2008,13 @@ class SinglePlotPage(QWidget):
         self._scroll.setStyleSheet(_scrollbar_css(primary, track))
         self._file_btn.setIcon(QIcon(_colored_pixmap(MaterialIcon("description"), 24, fg)))
         self._folder_btn.setIcon(QIcon(_colored_pixmap(MaterialIcon("folder_open"), 24, fg)))
-        self._output_btn.setIcon(QIcon(_colored_pixmap(MaterialIcon("save"), 24, fg)))
+        self._output_btn.setIcon(QIcon(_colored_pixmap(MaterialIcon("folder_open"), 24, fg)))
         self._cta_btn.setIcon(QIcon(_colored_pixmap(MaterialIcon("area_chart"), 24, fg)))
         for btn in self._instrument_file_btns.values():
             btn.setIcon(QIcon(_colored_pixmap(MaterialIcon("description"), 24, fg)))
         for combo in (
             self._mode_combo,
+            self._single_source_combo,
             self._source_combo,
             self._y_scale_combo,
             self._z_scale_combo,
@@ -1880,6 +2025,7 @@ class SinglePlotPage(QWidget):
             combo.view().setStyleSheet(f"color: {fg};")
         self._orbit_entry.setStyleSheet(f"color: {fg};")
         self._date_edit.setStyleSheet(f"color: {fg};")
+        self._single_date_edit.setStyleSheet(f"color: {fg};")
 
 
 # --- Main application window ---
@@ -1916,7 +2062,7 @@ class MainWindow(QMainWindow, QtStyleTools):
         sb.setSpacing(4)
         self._nav_download = NavButton(MaterialIcon("file_download"), "Download", icon_color=nav_color)
         self._nav_plot = NavButton(MaterialIcon("area_chart"), "Plot", icon_color=nav_color)
-        self._nav_single_plot = NavButton(MaterialIcon("insert_chart"), "Single Plot", icon_color=nav_color)
+        self._nav_single_plot = NavButton(MaterialIcon("insert_chart"), "Single Day", icon_color=nav_color)
         self._nav_download.clicked.connect(lambda: self._switch_page(0))
         self._nav_plot.clicked.connect(lambda: self._switch_page(1))
         self._nav_single_plot.clicked.connect(lambda: self._switch_page(2))
@@ -1993,7 +2139,7 @@ class MainWindow(QMainWindow, QtStyleTools):
         event.accept()
 
     def _switch_page(self, index: int) -> None:
-        """Navigate to the page at *index* (0 = Download, 1 = Plot, 2 = Single Plot)."""
+        """Navigate to the page at *index* (0 = Download, 1 = Plot, 2 = Single Day)."""
         self._stack.setCurrentIndex(index)
         self._nav_download.set_selected(index == 0)
         self._nav_plot.set_selected(index == 1)
