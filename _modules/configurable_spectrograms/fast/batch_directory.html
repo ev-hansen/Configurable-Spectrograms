@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>configurable_spectrograms.fast.batch_directory &#8212; Configurable Spectrograms  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for configurable_spectrograms.fast.batch_directory</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Batch driver: process every orbit in a FAST CDF directory in parallel.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">concurrent.futures</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">signal</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.cdf_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_filtered_orbits</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">DEFAULT_ZOOM_WINDOW_MINUTES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.fast.constants</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FAST_CDF_DATA_FOLDER_PATH</span><span class="p">,</span>
+    <span class="n">FAST_OUTPUT_BASE</span><span class="p">,</span>
+    <span class="n">FAST_PLOTTING_PROGRESS_JSON</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.fast.extrema</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_global_extrema</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.fast.orbit_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_add_to_orbit_list</span><span class="p">,</span>
+    <span class="n">_classify_error_reason</span><span class="p">,</span>
+    <span class="n">discover_orbit_files</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.fast.process_orbit</span><span class="w"> </span><span class="kn">import</span> <span class="n">FAST_process_single_orbit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.logging_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_log_batch</span><span class="p">,</span> <span class="n">flush_log_buffer</span><span class="p">,</span> <span class="n">log_exception</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.process_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">terminate_all_child_processes</span>
+
+<span class="n">_INSTRUMENT_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="s2">&quot;eeb&quot;</span><span class="p">,</span> <span class="s2">&quot;ies&quot;</span><span class="p">,</span> <span class="s2">&quot;ieb&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="FAST_plot_spectrograms_directory">
+<a class="viewcode-back" href="../../../modules.html#batch_multi_plot_FAST_spectrograms.FAST_plot_spectrograms_directory">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">FAST_plot_spectrograms_directory</span><span class="p">(</span>
+    <span class="n">directory_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">FAST_CDF_DATA_FOLDER_PATH</span><span class="p">,</span>
+    <span class="n">output_base</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">FAST_OUTPUT_BASE</span><span class="p">,</span>
+    <span class="n">y_scale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">z_scale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span>
+    <span class="n">zoom_duration_minutes</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DEFAULT_ZOOM_WINDOW_MINUTES</span><span class="p">,</span>
+    <span class="n">instrument_order</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">_INSTRUMENT_KEYS</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">progress_json_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">FAST_PLOTTING_PROGRESS_JSON</span><span class="p">,</span>
+    <span class="n">ignore_progress_json</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_tqdm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="n">orbit_timeout_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="n">instrument_timeout_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="n">retry_timeouts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">flush_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">log_flush_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_processing_percentile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">override_plots</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Batch process ESA spectrogram plots for all orbits in a directory.</span>
+
+<span class="sd">    Discovers instrument CDF files (excluding ``_orb_``), groups them by</span>
+<span class="sd">    orbit, and processes each orbit in parallel worker processes (safe for</span>
+<span class="sd">    matplotlib). Progress is persisted to a JSON file to support resumable</span>
+<span class="sd">    runs. When ``max_processing_percentile`` is not None, a global extrema</span>
+<span class="sd">    pass runs first (:func:`configurable_spectrograms.fast.extrema.compute_global_extrema`)</span>
+<span class="sd">    and both raw and given-extrema plots are saved; otherwise only raw plots</span>
+<span class="sd">    are produced.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    directory_path : str, default FAST_CDF_DATA_FOLDER_PATH</span>
+<span class="sd">        Root folder containing CDF files.</span>
+<span class="sd">    output_base : str, default FAST_OUTPUT_BASE</span>
+<span class="sd">        Base output directory; plots are saved under ``output_base/year/month/orbit``.</span>
+<span class="sd">    y_scale : {&#39;linear&#39;, &#39;log&#39;}, default &#39;linear&#39;</span>
+<span class="sd">        Y-axis scaling.</span>
+<span class="sd">    z_scale : {&#39;linear&#39;, &#39;log&#39;}, default &#39;log&#39;</span>
+<span class="sd">        Color scale for intensity.</span>
+<span class="sd">    zoom_duration_minutes : float, default DEFAULT_ZOOM_WINDOW_MINUTES</span>
+<span class="sd">        Zoom window length for zoom columns.</span>
+<span class="sd">    instrument_order : tuple of str, default (&#39;ees&#39;, &#39;eeb&#39;, &#39;ies&#39;, &#39;ieb&#39;)</span>
+<span class="sd">        Display order for the instrument grid.</span>
+<span class="sd">    verbose : bool, default True</span>
+<span class="sd">        Print additional batch messages when True.</span>
+<span class="sd">    progress_json_path : str or None, default FAST_PLOTTING_PROGRESS_JSON</span>
+<span class="sd">        Path to persist progress across runs; None disables persistence.</span>
+<span class="sd">    ignore_progress_json : bool, default False</span>
+<span class="sd">        If True, do not read existing progress before starting.</span>
+<span class="sd">    use_tqdm : bool or None, default None</span>
+<span class="sd">        Show a tqdm progress bar when True; defaults to False when None.</span>
+<span class="sd">    colormap : str, default &#39;viridis&#39;</span>
+<span class="sd">        Matplotlib colormap name.</span>
+<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;}, default &#39;line&#39;</span>
+<span class="sd">        Cusp-boundary marker style forwarded to every orbit&#39;s plots.</span>
+<span class="sd">    cusp_marker_kwargs : dict or None, optional</span>
+<span class="sd">        Extra keyword arguments forwarded to the marker-drawing function.</span>
+<span class="sd">    max_workers : int, default 4</span>
+<span class="sd">        Max number of worker processes.</span>
+<span class="sd">    orbit_timeout_seconds : int or float, default 60</span>
+<span class="sd">        Total per-orbit timeout (seconds).</span>
+<span class="sd">    instrument_timeout_seconds : int or float, default 30</span>
+<span class="sd">        Per-instrument/grid timeout (seconds).</span>
+<span class="sd">    retry_timeouts : bool, default True</span>
+<span class="sd">        If True, retry timed-out orbits once with a smaller pool.</span>
+<span class="sd">    flush_batch_size : int, default 10</span>
+<span class="sd">        Orbit completions between progress/extrema JSON writes. Values &lt; 1</span>
+<span class="sd">        become 1. Final partial batch always flushes.</span>
+<span class="sd">    log_flush_batch_size : int or None, default None</span>
+<span class="sd">        Logging buffer batch size; defaults to ``flush_batch_size`` when None.</span>
+<span class="sd">    max_processing_percentile : float or None, default None</span>
+<span class="sd">        Percentile (0-100] for pooled intensity (Z) maxima in</span>
+<span class="sd">        ``compute_global_extrema``. None skips the extrema pass and</span>
+<span class="sd">        raw-only plots are produced. Energy (Y) maxima use a fixed 99%</span>
+<span class="sd">        cumulative coverage rule regardless.</span>
+<span class="sd">    override_plots : bool, default True</span>
+<span class="sd">        If False, skip plots whose output file already exists.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of dict</span>
+<span class="sd">        Result dictionaries from ``FAST_process_single_orbit`` (and</span>
+<span class="sd">        retries).</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    KeyboardInterrupt</span>
+<span class="sd">        Re-raised on SIGINT/SIGTERM so the caller can stop multi-combo loops.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - Progress JSON key ``f&quot;progress_{y_scale}_{z_scale}_last_orbit&quot;`` tracks</span>
+<span class="sd">      the last completed orbit; error/timeout orbits are recorded under</span>
+<span class="sd">      dedicated keys (including per-instrument).</span>
+<span class="sd">    - Signal handlers terminate child processes and raise</span>
+<span class="sd">      ``KeyboardInterrupt`` to interrupt the main wait loop immediately.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shutdown_requested</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;flag&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_signal_handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>  <span class="c1"># frame unused</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">shutdown_requested</span><span class="p">[</span><span class="s2">&quot;flag&quot;</span><span class="p">]:</span>
+            <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[INTERRUPT] Signal </span><span class="si">{</span><span class="n">signum</span><span class="si">}</span><span class="s2"> received. Requesting shutdown...&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+            <span class="n">shutdown_requested</span><span class="p">[</span><span class="s2">&quot;flag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">terminate_all_child_processes</span><span class="p">()</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyboardInterrupt</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log_exception</span><span class="p">(</span><span class="s2">&quot;[INTERRUPT] Second interrupt - forcing immediate exit.&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">terminate_all_child_processes</span><span class="p">()</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">130</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">_signal_handler</span><span class="p">)</span>
+        <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">_signal_handler</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">log_exception</span><span class="p">(</span><span class="s2">&quot;[WARN] Could not register signal handlers&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+
+    <span class="n">filtered_orbits_dataframe</span> <span class="o">=</span> <span class="n">load_filtered_orbits</span><span class="p">()</span>
+    <span class="n">configure_log_batch</span><span class="p">(</span><span class="n">log_flush_batch_size</span> <span class="ow">or</span> <span class="n">flush_batch_size</span><span class="p">)</span>
+
+    <span class="n">global_extrema</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">max_processing_percentile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">global_extrema</span> <span class="o">=</span> <span class="n">compute_global_extrema</span><span class="p">(</span>
+            <span class="n">directory_path</span><span class="p">,</span>
+            <span class="n">y_scale</span><span class="p">,</span>
+            <span class="n">z_scale</span><span class="p">,</span>
+            <span class="n">instrument_order</span><span class="p">,</span>
+            <span class="n">compute_mins</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">max_percentile</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">max_processing_percentile</span><span class="p">),</span>
+            <span class="n">log_floor_cutoff</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+            <span class="n">log_floor_value</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span>
+            <span class="n">flush_batch_size</span><span class="o">=</span><span class="n">flush_batch_size</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">orbit_to_instruments</span> <span class="o">=</span> <span class="n">discover_orbit_files</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="n">instrument_order</span><span class="p">)</span>
+    <span class="n">sorted_orbits</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">orbit_to_instruments</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">total_orbits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_orbits</span><span class="p">)</span>
+
+    <span class="n">progress_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+    <span class="n">error_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_error_plotting&quot;</span>
+    <span class="n">progress_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">last_completed_orbit</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">error_orbits</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">progress_json_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ignore_progress_json</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">progress_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">last_completed_orbit</span> <span class="o">=</span> <span class="n">progress_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">progress_key</span><span class="p">)</span>
+            <span class="n">error_orbits</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">progress_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">error_key</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">log_exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[ERROR] Failed to load progress JSON from </span><span class="si">{</span><span class="n">progress_json_path</span><span class="si">}</span><span class="s2">. Starting fresh.&quot;</span><span class="p">,</span>
+                <span class="n">exc</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">last_completed_orbit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">orbit</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sorted_orbits</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">orbit</span> <span class="o">&gt;</span> <span class="n">last_completed_orbit</span><span class="p">:</span>
+                <span class="n">start_idx</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start_idx</span> <span class="o">=</span> <span class="n">total_orbits</span>
+        <span class="n">log_exception</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[RESUME] Skipping </span><span class="si">{</span><span class="n">start_idx</span><span class="si">}</span><span class="s2"> orbits (up to orbit </span><span class="si">{</span><span class="n">last_completed_orbit</span><span class="si">}</span><span class="s2">). &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">error_orbits</span><span class="p">)</span><span class="si">}</span><span class="s2"> error orbits will also be skipped.&quot;</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log_exception</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[RESUME] No previous progress found. Starting from the first orbit. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">error_orbits</span><span class="p">)</span><span class="si">}</span><span class="s2"> error orbits will be skipped if present.&quot;</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">use_tqdm_bar</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">use_tqdm</span><span class="p">)</span> <span class="k">if</span> <span class="n">use_tqdm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="n">flush_batch_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">flush_batch_size</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_orbit_args</span><span class="p">(</span><span class="n">orbit_n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">inst_files</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">extrema</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">orbit_n</span><span class="p">,</span>
+            <span class="n">inst_files</span><span class="p">,</span>
+            <span class="n">filtered_orbits_dataframe</span><span class="p">,</span>
+            <span class="n">zoom_duration_minutes</span><span class="p">,</span>
+            <span class="n">y_scale</span><span class="p">,</span>
+            <span class="n">z_scale</span><span class="p">,</span>
+            <span class="n">instrument_order</span><span class="p">,</span>
+            <span class="n">colormap</span><span class="p">,</span>
+            <span class="n">output_base</span><span class="p">,</span>
+            <span class="n">orbit_timeout_seconds</span><span class="p">,</span>
+            <span class="n">instrument_timeout_seconds</span><span class="p">,</span>
+            <span class="n">extrema</span><span class="p">,</span>
+            <span class="n">override_plots</span><span class="p">,</span>
+            <span class="n">cusp_marker_style</span><span class="p">,</span>
+            <span class="n">cusp_marker_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">orbit_args_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">orbit_number</span><span class="p">,</span> <span class="n">instrument_files</span> <span class="ow">in</span> <span class="n">sorted_orbits</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="n">orbit_number</span> <span class="ow">in</span> <span class="n">error_orbits</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">orbit_args_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_orbit_args</span><span class="p">(</span><span class="n">orbit_number</span><span class="p">,</span> <span class="n">instrument_files</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">global_extrema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">orbit_args_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_orbit_args</span><span class="p">(</span><span class="n">orbit_number</span><span class="p">,</span> <span class="n">instrument_files</span><span class="p">,</span> <span class="n">global_extrema</span><span class="p">))</span>
+
+    <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_batched_progress_dirty</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_progress_json</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Persist *data* to disk if the batch threshold is met or ``force`` is True.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">progress_json_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span><span class="p">:</span>
+            <span class="n">_batched_progress_dirty</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">_batched_progress_dirty</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">flush_batch_size</span><span class="p">:</span>
+                <span class="k">return</span>
+        <span class="n">_batched_progress_dirty</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">log_exception</span><span class="p">(</span><span class="s2">&quot;[FAIL] Could not write progress JSON&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="p">)</span>
+
+    <span class="n">executor</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_orbit_completions_since_flush</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_completed_future</span><span class="p">(</span><span class="n">fut</span><span class="p">:</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">Future</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Consume a completed future, append its result, and update progress JSON.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">fut</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[BATCH] Orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> generated an exception&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;orbit&quot;</span><span class="p">:</span> <span class="n">orbit_number</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)]}</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">progress_json_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">pdisk</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">):</span>
+                    <span class="n">pdisk</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">pdisk</span><span class="p">[</span><span class="n">progress_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">orbit_number</span>
+                <span class="n">_add_to_orbit_list</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="n">error_key</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+                <span class="n">reason</span> <span class="o">=</span> <span class="n">_classify_error_reason</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">))</span>
+                <span class="n">_add_to_orbit_list</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;unknown_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_error-</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+                <span class="n">_add_to_orbit_list</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_error-</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+                <span class="n">_orbit_completions_since_flush</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">_orbit_completions_since_flush</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">flush_batch_size</span><span class="p">:</span>
+                    <span class="n">save_progress_json</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">_orbit_completions_since_flush</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">save_progress_json</span><span class="p">(</span><span class="n">pdisk</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="n">status_value</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">use_tqdm_bar</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[BATCH] Completed orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">status_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">progress_json_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">pdisk</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">):</span>
+            <span class="n">pdisk</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">pdisk</span><span class="p">[</span><span class="n">progress_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">orbit_number</span>
+        <span class="n">pdisk</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">error_key</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">orbit_timeout_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;orbit_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_timed_out&quot;</span>
+        <span class="n">pdisk</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">orbit_timeout_key</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="k">if</span> <span class="n">status_value</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span>
+            <span class="n">_add_to_orbit_list</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="n">error_key</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">err_msg</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
+                <span class="n">reason</span> <span class="o">=</span> <span class="n">_classify_error_reason</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+                <span class="n">lowered</span> <span class="o">=</span> <span class="n">err_msg</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="n">inst</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">_INSTRUMENT_KEYS</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">lowered</span><span class="p">),</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+                <span class="n">_add_to_orbit_list</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_error-</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+                <span class="n">_add_to_orbit_list</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_error-</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">status_value</span> <span class="o">==</span> <span class="s2">&quot;timeout&quot;</span><span class="p">:</span>
+            <span class="n">timeout_type</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout_type&quot;</span><span class="p">)</span>
+            <span class="n">timeout_instrument</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout_instrument&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">timeout_type</span> <span class="o">==</span> <span class="s2">&quot;orbit&quot;</span><span class="p">:</span>
+                <span class="n">_add_to_orbit_list</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="n">orbit_timeout_key</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">timeout_type</span> <span class="o">==</span> <span class="s2">&quot;instrument&quot;</span><span class="p">:</span>
+                <span class="n">inst_to</span> <span class="o">=</span> <span class="n">timeout_instrument</span> <span class="ow">or</span> <span class="s2">&quot;unknown_instrument&quot;</span>
+                <span class="n">tk</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst_to</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_timed_out&quot;</span>
+                <span class="n">_add_to_orbit_list</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="n">tk</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+
+        <span class="n">_orbit_completions_since_flush</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">_orbit_completions_since_flush</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">flush_batch_size</span><span class="p">:</span>
+            <span class="n">save_progress_json</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_orbit_completions_since_flush</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">save_progress_json</span><span class="p">(</span><span class="n">pdisk</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">executor</span> <span class="o">=</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ProcessPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">max_workers</span><span class="p">)</span>
+        <span class="n">future_to_orbit</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">Future</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">orbit_args_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">shutdown_requested</span><span class="p">[</span><span class="s2">&quot;flag&quot;</span><span class="p">]:</span>
+                <span class="k">break</span>
+            <span class="n">future</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">FAST_process_single_orbit</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="n">future_to_orbit</span><span class="p">[</span><span class="n">future</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">futures</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">future_to_orbit</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="n">progress_bar</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">use_tqdm_bar</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">start_idx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">log_exception</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[RESUME] Resuming progress bar at orbit </span><span class="si">{</span><span class="n">start_idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">total_orbits</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;for y_scale=</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">, z_scale=</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
+                    <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">progress_bar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">futures</span><span class="p">),</span>
+                <span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Plotting - </span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;orbit&quot;</span><span class="p">,</span>
+                <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="n">futures</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">shutdown_requested</span><span class="p">[</span><span class="s2">&quot;flag&quot;</span><span class="p">]:</span>
+                    <span class="k">break</span>
+                <span class="n">done</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">futures</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">return_when</span><span class="o">=</span><span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">fut</span> <span class="ow">in</span> <span class="n">done</span><span class="p">:</span>
+                    <span class="n">futures</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">fut</span><span class="p">)</span>
+                    <span class="n">orbit_number</span> <span class="o">=</span> <span class="n">future_to_orbit</span><span class="p">[</span><span class="n">fut</span><span class="p">]</span>
+                    <span class="n">_handle_completed_future</span><span class="p">(</span><span class="n">fut</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">progress_bar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">progress_bar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">orbit</span><span class="o">=</span><span class="n">orbit_number</span><span class="p">)</span>
+                        <span class="n">progress_bar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">progress_bar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">progress_bar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">progress_json_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">):</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">final_pd</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">final_pd</span> <span class="o">=</span> <span class="n">progress_data</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progress_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
+            <span class="n">save_progress_json</span><span class="p">(</span><span class="n">final_pd</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">shutdown_requested</span><span class="p">[</span><span class="s2">&quot;flag&quot;</span><span class="p">]:</span>
+            <span class="n">log_exception</span><span class="p">(</span><span class="s2">&quot;[INTERRUPT] Shutdown requested; cancelling remaining futures.&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">fut</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">futures</span><span class="p">):</span>
+                <span class="n">fut</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cancel_futures</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_kill_lingering_processes</span><span class="p">(</span><span class="n">executor</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyboardInterrupt</span>
+
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">log_exception</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;[INTERRUPT] KeyboardInterrupt caught. Terminating worker processes... Exception: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">executor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cancel_futures</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_kill_lingering_processes</span><span class="p">(</span><span class="n">executor</span><span class="p">)</span>
+        <span class="k">raise</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">executor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cancel_futures</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">progress_json_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">final_pd</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">final_pd</span> <span class="o">=</span> <span class="n">progress_data</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progress_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="n">save_progress_json</span><span class="p">(</span><span class="n">final_pd</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="n">flush_log_buffer</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">retry_timeouts</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">shutdown_requested</span><span class="p">[</span><span class="s2">&quot;flag&quot;</span><span class="p">]:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">_retry_timed_out_orbits</span><span class="p">(</span>
+            <span class="n">results</span><span class="p">,</span>
+            <span class="n">orbit_to_instruments</span><span class="p">,</span>
+            <span class="n">_orbit_args</span><span class="p">,</span>
+            <span class="n">max_workers</span><span class="p">,</span>
+            <span class="n">progress_json_path</span><span class="p">,</span>
+            <span class="n">y_scale</span><span class="p">,</span>
+            <span class="n">z_scale</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_kill_lingering_processes</span><span class="p">(</span><span class="n">executor</span><span class="p">:</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ProcessPoolExecutor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Best-effort terminate then kill any worker processes still alive after shutdown.&quot;&quot;&quot;</span>
+    <span class="n">processes</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">executor</span><span class="p">,</span> <span class="s2">&quot;_processes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">processes</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="n">processes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">proc</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="n">_time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="n">processes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+                <span class="n">proc</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_retry_timed_out_orbits</span><span class="p">(</span>
+    <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">orbit_to_instruments</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+    <span class="n">orbit_args_fn</span><span class="p">,</span>
+    <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">progress_json_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">y_scale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">z_scale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retry every orbit whose status is ``&#39;timeout&#39;`` once, with a smaller worker pool.&quot;&quot;&quot;</span>
+    <span class="n">timeout_orbits</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;orbit&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;timeout&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">timeout_orbits</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[RETRY] Retrying </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">timeout_orbits</span><span class="p">)</span><span class="si">}</span><span class="s2"> timed-out orbits once.&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+    <span class="n">retry_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">orbit_args_fn</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">orbit_to_instruments</span><span class="p">[</span><span class="n">o</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">timeout_orbits</span> <span class="k">if</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">orbit_to_instruments</span><span class="p">]</span>
+    <span class="n">retry_results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ProcessPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">max_workers</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="k">as</span> <span class="n">retry_executor</span><span class="p">:</span>
+            <span class="n">retry_future_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">retry_executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">FAST_process_single_orbit</span><span class="p">,</span> <span class="o">*</span><span class="n">ra</span><span class="p">):</span> <span class="n">ra</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">ra</span> <span class="ow">in</span> <span class="n">retry_args</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">rfut</span> <span class="ow">in</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">as_completed</span><span class="p">(</span><span class="n">retry_future_map</span><span class="p">):</span>
+                <span class="n">r_orbit</span> <span class="o">=</span> <span class="n">retry_future_map</span><span class="p">[</span><span class="n">rfut</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">r_result</span> <span class="o">=</span> <span class="n">rfut</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                    <span class="n">retry_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r_result</span><span class="p">)</span>
+                    <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[RETRY] Completed orbit </span><span class="si">{</span><span class="n">r_orbit</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">r_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">progress_json_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">r_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;ok&quot;</span><span class="p">:</span>
+                        <span class="n">_clear_timeout_flag</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">,</span> <span class="n">r_orbit</span><span class="p">,</span> <span class="n">y_scale</span><span class="p">,</span> <span class="n">z_scale</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[RETRY] Orbit </span><span class="si">{</span><span class="n">r_orbit</span><span class="si">}</span><span class="s2"> retry failed&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="p">)</span>
+                    <span class="n">retry_results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;orbit&quot;</span><span class="p">:</span> <span class="n">r_orbit</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)]})</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">log_exception</span><span class="p">(</span><span class="s2">&quot;[RETRY] Failed to execute retry pool&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+
+    <span class="n">results_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;orbit&quot;</span><span class="p">]:</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">retry_result</span> <span class="ow">in</span> <span class="n">retry_results</span><span class="p">:</span>
+        <span class="n">results_map</span><span class="p">[</span><span class="n">retry_result</span><span class="p">[</span><span class="s2">&quot;orbit&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">retry_result</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">results_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_clear_timeout_flag</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">orbit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">y_scale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z_scale</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove *orbit* from every ``*_timed_out`` progress-JSON list after a successful retry.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pdisk</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">log_exception</span><span class="p">(</span><span class="s2">&quot;[WARN] Could not read progress JSON for retry cleanup&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="n">timeout_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">pdisk</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_timed_out&quot;</span><span class="p">)]</span>
+    <span class="n">modified</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">tk</span> <span class="ow">in</span> <span class="n">timeout_keys</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pdisk</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tk</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">orbit</span> <span class="ow">in</span> <span class="n">pdisk</span><span class="p">[</span><span class="n">tk</span><span class="p">]:</span>
+            <span class="n">pdisk</span><span class="p">[</span><span class="n">tk</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pdisk</span><span class="p">[</span><span class="n">tk</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">orbit</span><span class="p">]</span>
+            <span class="n">modified</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">modified</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">pdisk</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">log_exception</span><span class="p">(</span><span class="s2">&quot;[WARN] Could not write cleaned progress JSON&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Configurable Spectrograms</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Module Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../batching_and_logging.html">Batching and Buffered Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../generic_batch_plotting.html">Generic Batch Spectrogram Plotting</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Ev Hansen.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

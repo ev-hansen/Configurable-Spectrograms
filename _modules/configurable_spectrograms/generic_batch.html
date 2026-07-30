@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>configurable_spectrograms.generic_batch &#8212; Configurable Spectrograms  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for configurable_spectrograms.generic_batch</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Generic (data-agnostic) batch spectrogram plotting.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessPoolExecutor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.batch_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_batch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">PLOTTING_PROGRESS_JSON_PATH</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.logging_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_error</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">close_all_axes_and_clear</span><span class="p">,</span> <span class="n">generic_plot_spectrogram_set</span>
+
+
+<div class="viewcode-block" id="generic_batch_plot">
+<a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.generic_batch_plot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generic_batch_plot</span><span class="p">(</span>
+    <span class="n">items</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">build_datasets_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]],</span>
+    <span class="n">zoom_center_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">zoom_window_seconds</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">vertical_lines_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">y_scale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">z_scale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">progress_json_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">PLOTTING_PROGRESS_JSON_PATH</span><span class="p">,</span>
+    <span class="n">ignore_progress_json</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">flush_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">log_flush_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">install_signal_handlers</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic batch runner for plotting datasets across many items in parallel.</span>
+
+<span class="sd">    Each item is rendered by calling</span>
+<span class="sd">    :func:`configurable_spectrograms.plotting.generic_plot_spectrogram_set`</span>
+<span class="sd">    exactly once, in a worker process managed by</span>
+<span class="sd">    :func:`configurable_spectrograms.batch_runner.run_batch`, so a single</span>
+<span class="sd">    item plotted through this batch driver produces the same output as</span>
+<span class="sd">    calling the single-output function directly.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    items : iterable</span>
+<span class="sd">        Iterable of item identifiers (any ``repr``-able objects).</span>
+<span class="sd">    output_dir : str</span>
+<span class="sd">        Base output directory; plots saved under ``output_dir/&lt;item&gt;/generic.png``.</span>
+<span class="sd">    build_datasets_fn : callable</span>
+<span class="sd">        Callable returning ``list[dict]`` describing datasets for an item.</span>
+<span class="sd">    zoom_center_fn : callable, optional</span>
+<span class="sd">        Callable mapping item -&gt; center UNIX time (or ``None``) for zoom.</span>
+<span class="sd">    zoom_window_seconds : float, optional</span>
+<span class="sd">        Duration of zoom window in seconds.</span>
+<span class="sd">    vertical_lines_fn : callable, optional</span>
+<span class="sd">        Callable mapping item -&gt; list[float] UNIX timestamps (or ``None``).</span>
+<span class="sd">    y_scale : {&#39;linear&#39;, &#39;log&#39;}, default &#39;linear&#39;</span>
+<span class="sd">        Y-axis scaling for all rows.</span>
+<span class="sd">    z_scale : {&#39;linear&#39;, &#39;log&#39;}, default &#39;linear&#39;</span>
+<span class="sd">        Color scaling for all rows.</span>
+<span class="sd">    colormap : str, default &#39;viridis&#39;</span>
+<span class="sd">        Matplotlib colormap name.</span>
+<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;}, default &#39;line&#39;</span>
+<span class="sd">        Cusp-boundary marker style forwarded to ``generic_plot_spectrogram_set``.</span>
+<span class="sd">    cusp_marker_kwargs : dict or None, optional</span>
+<span class="sd">        Extra keyword arguments forwarded to the marker-drawing function.</span>
+<span class="sd">    max_workers : int, default 2</span>
+<span class="sd">        Number of parallel worker processes.</span>
+<span class="sd">    progress_json_path : str, default PLOTTING_PROGRESS_JSON_PATH</span>
+<span class="sd">        Path to progress JSON (resumable state). Created/updated as needed.</span>
+<span class="sd">    ignore_progress_json : bool, default False</span>
+<span class="sd">        If ``True``, skip reading existing progress prior to execution.</span>
+<span class="sd">    flush_batch_size : int, default 10</span>
+<span class="sd">        Progress/log batch size; values &lt; 1 coerced to 1. Final partial</span>
+<span class="sd">        batch flushed.</span>
+<span class="sd">    log_flush_batch_size : int, optional</span>
+<span class="sd">        Explicit log batch size; if ``None`` reuse ``flush_batch_size``.</span>
+<span class="sd">    install_signal_handlers : bool, default True</span>
+<span class="sd">        When True, a temporary SIGINT handler is installed (restored on</span>
+<span class="sd">        exit) to enable graceful interruption (progress &amp; log flush).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list of tuple</span>
+<span class="sd">        Sequence of ``(item, status)`` with ``status`` in {``&#39;ok&#39;``,</span>
+<span class="sd">        ``&#39;no_data&#39;``, ``&#39;error&#39;``}.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_worker</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">datasets</span> <span class="o">=</span> <span class="n">build_datasets_fn</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">datasets</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;no_data&quot;</span><span class="p">)</span>
+            <span class="n">center</span> <span class="o">=</span> <span class="n">zoom_center_fn</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">if</span> <span class="n">zoom_center_fn</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">vertical_lines</span> <span class="o">=</span> <span class="n">vertical_lines_fn</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">if</span> <span class="n">vertical_lines_fn</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">_canvas</span> <span class="o">=</span> <span class="n">generic_plot_spectrogram_set</span><span class="p">(</span>
+                <span class="n">datasets</span><span class="p">,</span>
+                <span class="n">zoom_center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span>
+                <span class="n">zoom_window_seconds</span><span class="o">=</span><span class="n">zoom_window_seconds</span><span class="p">,</span>
+                <span class="n">vertical_lines</span><span class="o">=</span><span class="n">vertical_lines</span><span class="p">,</span>
+                <span class="n">y_scale</span><span class="o">=</span><span class="n">y_scale</span><span class="p">,</span>
+                <span class="n">z_scale</span><span class="o">=</span><span class="n">z_scale</span><span class="p">,</span>
+                <span class="n">colormap</span><span class="o">=</span><span class="n">colormap</span><span class="p">,</span>
+                <span class="n">cusp_marker_style</span><span class="o">=</span><span class="n">cusp_marker_style</span><span class="p">,</span>
+                <span class="n">cusp_marker_kwargs</span><span class="o">=</span><span class="n">cusp_marker_kwargs</span><span class="p">,</span>
+                <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">fig</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">item_output_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">item_output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">out_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item_output_dir</span><span class="p">,</span> <span class="s2">&quot;generic.png&quot;</span><span class="p">)</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+                <span class="n">close_all_axes_and_clear</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;ok&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">generic_exception</span><span class="p">:</span>
+            <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[GENERIC-FAIL] Item </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">generic_exception</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">run_batch</span><span class="p">(</span>
+        <span class="n">items</span><span class="p">,</span>
+        <span class="n">_worker</span><span class="p">,</span>
+        <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">ProcessPoolExecutor</span><span class="p">,</span> <span class="n">max_workers</span><span class="o">=</span><span class="n">max_workers</span><span class="p">),</span>
+        <span class="n">progress_json_path</span><span class="o">=</span><span class="n">progress_json_path</span><span class="p">,</span>
+        <span class="n">ignore_progress_json</span><span class="o">=</span><span class="n">ignore_progress_json</span><span class="p">,</span>
+        <span class="n">flush_batch_size</span><span class="o">=</span><span class="n">flush_batch_size</span><span class="p">,</span>
+        <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="n">log_flush_batch_size</span><span class="p">,</span>
+        <span class="n">install_signal_handlers</span><span class="o">=</span><span class="n">install_signal_handlers</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Configurable Spectrograms</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Module Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../batching_and_logging.html">Batching and Buffered Logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../generic_batch_plotting.html">Generic Batch Spectrogram Plotting</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Ev Hansen.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
