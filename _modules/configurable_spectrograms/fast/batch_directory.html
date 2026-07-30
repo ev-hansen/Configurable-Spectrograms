@@ -76,7 +76,7 @@
     <span class="n">ignore_progress_json</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">use_tqdm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
-    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span>
     <span class="n">cusp_marker_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
     <span class="n">orbit_timeout_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
@@ -121,7 +121,7 @@
 <span class="sd">        Show a tqdm progress bar when True; defaults to False when None.</span>
 <span class="sd">    colormap : str, default &#39;viridis&#39;</span>
 <span class="sd">        Matplotlib colormap name.</span>
-<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;}, default &#39;line&#39;</span>
+<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;, &#39;both&#39;}, default &#39;both&#39;</span>
 <span class="sd">        Cusp-boundary marker style forwarded to every orbit&#39;s plots.</span>
 <span class="sd">    cusp_marker_kwargs : dict or None, optional</span>
 <span class="sd">        Extra keyword arguments forwarded to the marker-drawing function.</span>

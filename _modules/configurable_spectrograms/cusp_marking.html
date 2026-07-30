@@ -33,22 +33,23 @@
   <h1>Source code for configurable_spectrograms.cusp_marking</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Cusp-boundary markers drawn onto a spectrogram axis.</span>
 
-<span class="sd">Two interchangeable styles are provided: the original double-line marker</span>
-<span class="sd">(:func:`draw_cusp_line_markers`) and a bracket marker</span>
+<span class="sd">Three interchangeable styles are provided: the original double-line marker</span>
+<span class="sd">(:func:`draw_cusp_line_markers`), a bracket marker</span>
 <span class="sd">(:func:`draw_cusp_bracket_marker`) that spans the cusp interval below the</span>
-<span class="sd">axis instead of drawing lines through the data.</span>
+<span class="sd">axis instead of drawing lines through the data, and a combination of both</span>
+<span class="sd">(:func:`draw_cusp_both_markers`).</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="draw_cusp_line_markers">
 <a class="viewcode-back" href="../../modules.html#configurable_spectrograms.cusp_marking.draw_cusp_line_markers">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">draw_cusp_line_markers</span><span class="p">(</span><span class="n">axis_object</span><span class="p">,</span> <span class="n">marker_positions_plot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw a thick black line under a thinner red line at each marker position.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_cusp_line_markers</span><span class="p">(</span><span class="n">axis_object</span><span class="p">,</span> <span class="n">marker_positions_plot</span><span class="p">,</span> <span class="n">line_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw a thick black line under a thinner coloured line at each marker position.</span>
 
 <span class="sd">    This is the original cusp-boundary marker style: for each position in</span>
 <span class="sd">    ``marker_positions_plot`` a 4-pixel-wide black line is drawn first,</span>
-<span class="sd">    followed by a 2-pixel-wide red line on top, so the boundary remains</span>
-<span class="sd">    visible against both light and dark spectrogram data.</span>
+<span class="sd">    followed by a 2-pixel-wide line of *line_color* on top, so the boundary</span>
+<span class="sd">    remains visible against both light and dark spectrogram data.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -57,6 +58,10 @@
 <span class="sd">    marker_positions_plot : list of float</span>
 <span class="sd">        X positions, already converted to the axes&#39; plotting units, marking</span>
 <span class="sd">        cusp boundaries.</span>
+<span class="sd">    line_color : str, default &#39;red&#39;</span>
+<span class="sd">        Color of the thinner top line; callers typically switch this to a</span>
+<span class="sd">        colormap-appropriate color (e.g. white on top of ``&#39;turbo&#39;``, whose</span>
+<span class="sd">        high end is already red) so it stays visible.</span>
 <span class="sd">    **kwargs</span>
 <span class="sd">        Accepted and ignored, so callers can pass a single ``**style_kwargs``</span>
 <span class="sd">        dict regardless of which marker style is selected.</span>
@@ -68,11 +73,9 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">artists</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="n">marker_positions_plot</span><span class="p">:</span>
+        <span class="n">artists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">axis_object</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>
         <span class="n">artists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">axis_object</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">artists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">axis_object</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+            <span class="n">axis_object</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">line_color</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">artists</span></div>
 
@@ -90,6 +93,7 @@
     <span class="n">caption_offset</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.04</span><span class="p">,</span>
     <span class="n">caption_fontsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">linewidth</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw a bracket spanning the cusp interval below the axis.</span>
 
@@ -124,6 +128,10 @@
 <span class="sd">        Caption font size; uses the matplotlib default when ``None``.</span>
 <span class="sd">    linewidth : float, default 1.5</span>
 <span class="sd">        Bracket line width.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Accepted and ignored, so callers can pass a single ``**style_kwargs``</span>
+<span class="sd">        dict regardless of which marker style is selected (e.g. the</span>
+<span class="sd">        ``line_color`` used by :func:`draw_cusp_line_markers`).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -182,6 +190,40 @@
         <span class="p">)</span>
         <span class="n">artists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">artists</span></div>
+
+
+
+<div class="viewcode-block" id="draw_cusp_both_markers">
+<a class="viewcode-back" href="../../modules.html#configurable_spectrograms.cusp_marking.draw_cusp_both_markers">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_cusp_both_markers</span><span class="p">(</span><span class="n">axis_object</span><span class="p">,</span> <span class="n">marker_positions_plot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw both the line and bracket cusp-boundary markers at once.</span>
+
+<span class="sd">    Combines :func:`draw_cusp_line_markers` and</span>
+<span class="sd">    :func:`draw_cusp_bracket_marker` at the same marker positions, so the</span>
+<span class="sd">    boundary is both drawn through the data (visible without needing to look</span>
+<span class="sd">    below the axis) and bracketed (showing the interval clearly even where</span>
+<span class="sd">    the line style is hard to distinguish from the surrounding data).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    axis_object : matplotlib.axes.Axes</span>
+<span class="sd">        Axes to draw onto.</span>
+<span class="sd">    marker_positions_plot : list of float</span>
+<span class="sd">        X positions, already converted to the axes&#39; plotting units.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Forwarded to both :func:`draw_cusp_line_markers` and</span>
+<span class="sd">        :func:`draw_cusp_bracket_marker`; each ignores keyword arguments it</span>
+<span class="sd">        doesn&#39;t recognize (e.g. ``line_color`` is used only by the line</span>
+<span class="sd">        markers, ``color``/``bracket_y``/etc. only by the bracket marker).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        The combined matplotlib artists from both drawing functions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">draw_cusp_line_markers</span><span class="p">(</span><span class="n">axis_object</span><span class="p">,</span> <span class="n">marker_positions_plot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">+</span> <span class="n">draw_cusp_bracket_marker</span><span class="p">(</span>
+        <span class="n">axis_object</span><span class="p">,</span> <span class="n">marker_positions_plot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

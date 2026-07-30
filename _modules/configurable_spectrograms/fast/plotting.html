@@ -80,7 +80,7 @@
     <span class="n">y_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">z_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">z_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span>
     <span class="n">cusp_marker_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot a grid of ESA spectrograms collapsed by pitch-angle categories.</span>
@@ -116,7 +116,7 @@
 <span class="sd">    z_min, z_max : float or None, optional</span>
 <span class="sd">        Color scale limits; defaults to row-level 1st/99th percentiles when</span>
 <span class="sd">        None.</span>
-<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;}, default &#39;line&#39;</span>
+<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;, &#39;both&#39;}, default &#39;both&#39;</span>
 <span class="sd">        Cusp-boundary marker style; see</span>
 <span class="sd">        :mod:`configurable_spectrograms.cusp_marking`.</span>
 <span class="sd">    cusp_marker_kwargs : dict or None, optional</span>
@@ -227,7 +227,7 @@
     <span class="n">z_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">z_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">global_extrema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span>
     <span class="n">cusp_marker_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot a multi-instrument ESA spectrogram grid for a single orbit.</span>
@@ -265,7 +265,7 @@
 <span class="sd">        ``{instrument}_{y_scale}_{z_scale}_{axis}_{min|max}`` supplying</span>
 <span class="sd">        per-instrument limits. Takes precedence over the direct ``y_min`` /</span>
 <span class="sd">        ``y_max`` / ``z_min`` / ``z_max`` arguments.</span>
-<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;}, default &#39;line&#39;</span>
+<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;, &#39;both&#39;}, default &#39;both&#39;</span>
 <span class="sd">        Cusp-boundary marker style; see</span>
 <span class="sd">        :mod:`configurable_spectrograms.cusp_marking`.</span>
 <span class="sd">    cusp_marker_kwargs : dict or None, optional</span>
