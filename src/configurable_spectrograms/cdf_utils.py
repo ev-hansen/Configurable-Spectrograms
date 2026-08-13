@@ -5,6 +5,8 @@ that file-type detection, orbit-boundary lookup, and CDF loading logic
 exists in exactly one place.
 """
 
+import os
+import pickle
 from pathlib import Path
 
 import cdflib
@@ -21,6 +23,19 @@ orbit_column_cache: dict[tuple[int, str], tuple[str, str, str]] = {}
 cdf_type_cache: dict[str, str | None] = {}
 
 INSTRUMENT_TAGS = ("ees", "eeb", "ies", "ieb")
+
+# On-disk cache for load_fast_cdf_dataset, one pickle file per (CDF file,
+# variable set) pair. Unlike the in-memory dicts above, this survives
+# across separate process invocations (a fresh `uv run` of a plotting
+# script, or a new ProcessPoolExecutor worker), so re-plotting the same
+# orbit/day skips re-reading and re-reshaping the CDF entirely. Entries are
+# only written lazily as files are actually loaded -- nothing is ever
+# pre-populated in bulk -- and there is no staleness check or eviction:
+# a FAST CDF file's contents don't change once downloaded under a given
+# filename, so invalidation (if ever needed) is just deleting the cache
+# file or the whole directory. The directory itself is created lazily, on
+# first cache write, not as an import-time side effect.
+FAST_CDF_DATASET_CACHE_DIR: str = "./cache/fast_cdf_datasets"
 
 
 def load_filtered_orbits(csv_path: str = FILTERED_ORBITS_CSV_PATH) -> pd.DataFrame | None:
@@ -219,6 +234,22 @@ def get_cdf_var_shapes(
     return shapes_by_variable
 
 
+def _fast_cdf_dataset_cache_path(cdf_path: str, variable_names: tuple[str, ...]) -> str:
+    """Build the on-disk cache path for one (CDF file, variable set) pair.
+
+    Examples
+    --------
+    >>> _fast_cdf_dataset_cache_path(
+    ...     "./FAST_data/2001/11/fa_esa_l2_eeb_20011130002554_20986_v02.cdf",
+    ...     ("time_unix", "data", "energy", "pitch_angle"),
+    ... )
+    './cache/fast_cdf_datasets/fa_esa_l2_eeb_20011130002554_20986_v02__time_unix_data_energy_pitch_angle.pkl'
+    """
+    file_stem = Path(cdf_path).stem
+    variable_suffix = "_".join(variable_names)
+    return f"{FAST_CDF_DATASET_CACHE_DIR}/{file_stem}__{variable_suffix}.pkl"
+
+
 def load_fast_cdf_dataset(
     cdf_path: str, variable_names: tuple[str, ...] = tuple(CDF_VARIABLE_NAMES)
 ) -> dict[str, np.ndarray]:
@@ -229,6 +260,11 @@ def load_fast_cdf_dataset(
     1D bin arrays, and ``data`` is transposed to
     ``(time, pitch_angle, energy)`` order when needed, so the result is
     ready to collapse along pitch angle for a spectrogram.
+
+    The parsed result is cached on disk under :data:`FAST_CDF_DATASET_CACHE_DIR`
+    (one pickle file per CDF file/variable-set pair), so re-loading the same
+    file -- e.g. re-plotting the same orbit or day -- skips the CDF read and
+    reshape entirely on later calls, including from a fresh process.
 
     Parameters
     ----------
@@ -244,6 +280,11 @@ def load_fast_cdf_dataset(
         Mapping with keys ``'times'``, ``'data'``, ``'energy'``,
         ``'pitch_angle'``.
     """
+    cache_path = _fast_cdf_dataset_cache_path(cdf_path, variable_names)
+    if os.path.exists(cache_path):
+        with open(cache_path, "rb") as cache_file:
+            return pickle.load(cache_file)
+
     with cdflib.CDF(cdf_path) as cdf_file:
         times = np.asarray(cdf_file.varget(variable_names[0]))
         data = np.asarray(cdf_file.varget(variable_names[1]))
@@ -253,4 +294,9 @@ def load_fast_cdf_dataset(
     pitch_angle = pitch_angle_full[0, :, 0] if pitch_angle_full.ndim == 3 else pitch_angle_full
     if data.shape[1] == len(energy) and data.shape[2] == len(pitch_angle):
         data = np.transpose(data, (0, 2, 1))
-    return {"times": times, "data": data, "energy": energy, "pitch_angle": pitch_angle}
+    dataset = {"times": times, "data": data, "energy": energy, "pitch_angle": pitch_angle}
+
+    os.makedirs(FAST_CDF_DATASET_CACHE_DIR, exist_ok=True)
+    with open(cache_path, "wb") as cache_file:
+        pickle.dump(dataset, cache_file, protocol=pickle.HIGHEST_PROTOCOL)
+    return dataset

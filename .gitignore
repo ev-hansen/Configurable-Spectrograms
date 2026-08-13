@@ -16,6 +16,9 @@ wheels/
 FAST_data/
 FAST_plots/
 
+# load_fast_cdf_dataset's per-file parsed-array cache
+cache/
+
 # Progress and error logging
 *.log
 *.json
