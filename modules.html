@@ -1191,6 +1191,10 @@ array, or an error occurs.</p>
 1D bin arrays, and <code class="docutils literal notranslate"><span class="pre">data</span></code> is transposed to
 <code class="docutils literal notranslate"><span class="pre">(time,</span> <span class="pre">pitch_angle,</span> <span class="pre">energy)</span></code> order when needed, so the result is
 ready to collapse along pitch angle for a spectrogram.</p>
+<p>The parsed result is cached on disk under <code class="xref py py-data docutils literal notranslate"><span class="pre">FAST_CDF_DATASET_CACHE_DIR</span></code>
+(one pickle file per CDF file/variable-set pair), so re-loading the same
+file – e.g. re-plotting the same orbit or day – skips the CDF read and
+reshape entirely on later calls, including from a fresh process.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

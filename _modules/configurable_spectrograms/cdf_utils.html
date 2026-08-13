@@ -38,6 +38,8 @@
 <span class="sd">exists in exactly one place.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">cdflib</span>
@@ -54,6 +56,19 @@
 <span class="n">cdf_type_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
 <span class="n">INSTRUMENT_TAGS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="s2">&quot;eeb&quot;</span><span class="p">,</span> <span class="s2">&quot;ies&quot;</span><span class="p">,</span> <span class="s2">&quot;ieb&quot;</span><span class="p">)</span>
+
+<span class="c1"># On-disk cache for load_fast_cdf_dataset, one pickle file per (CDF file,</span>
+<span class="c1"># variable set) pair. Unlike the in-memory dicts above, this survives</span>
+<span class="c1"># across separate process invocations (a fresh `uv run` of a plotting</span>
+<span class="c1"># script, or a new ProcessPoolExecutor worker), so re-plotting the same</span>
+<span class="c1"># orbit/day skips re-reading and re-reshaping the CDF entirely. Entries are</span>
+<span class="c1"># only written lazily as files are actually loaded -- nothing is ever</span>
+<span class="c1"># pre-populated in bulk -- and there is no staleness check or eviction:</span>
+<span class="c1"># a FAST CDF file&#39;s contents don&#39;t change once downloaded under a given</span>
+<span class="c1"># filename, so invalidation (if ever needed) is just deleting the cache</span>
+<span class="c1"># file or the whole directory. The directory itself is created lazily, on</span>
+<span class="c1"># first cache write, not as an import-time side effect.</span>
+<span class="n">FAST_CDF_DATASET_CACHE_DIR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./cache/fast_cdf_datasets&quot;</span>
 
 
 <div class="viewcode-block" id="load_filtered_orbits">
@@ -267,6 +282,22 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_fast_cdf_dataset_cache_path</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variable_names</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the on-disk cache path for one (CDF file, variable set) pair.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; _fast_cdf_dataset_cache_path(</span>
+<span class="sd">    ...     &quot;./FAST_data/2001/11/fa_esa_l2_eeb_20011130002554_20986_v02.cdf&quot;,</span>
+<span class="sd">    ...     (&quot;time_unix&quot;, &quot;data&quot;, &quot;energy&quot;, &quot;pitch_angle&quot;),</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &#39;./cache/fast_cdf_datasets/fa_esa_l2_eeb_20011130002554_20986_v02__time_unix_data_energy_pitch_angle.pkl&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_stem</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
+    <span class="n">variable_suffix</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">variable_names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">FAST_CDF_DATASET_CACHE_DIR</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_stem</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">variable_suffix</span><span class="si">}</span><span class="s2">.pkl&quot;</span>
+
+
 <div class="viewcode-block" id="load_fast_cdf_dataset">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.load_fast_cdf_dataset">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_fast_cdf_dataset</span><span class="p">(</span>
@@ -279,6 +310,11 @@
 <span class="sd">    1D bin arrays, and ``data`` is transposed to</span>
 <span class="sd">    ``(time, pitch_angle, energy)`` order when needed, so the result is</span>
 <span class="sd">    ready to collapse along pitch angle for a spectrogram.</span>
+
+<span class="sd">    The parsed result is cached on disk under :data:`FAST_CDF_DATASET_CACHE_DIR`</span>
+<span class="sd">    (one pickle file per CDF file/variable-set pair), so re-loading the same</span>
+<span class="sd">    file -- e.g. re-plotting the same orbit or day -- skips the CDF read and</span>
+<span class="sd">    reshape entirely on later calls, including from a fresh process.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -294,6 +330,11 @@
 <span class="sd">        Mapping with keys ``&#39;times&#39;``, ``&#39;data&#39;``, ``&#39;energy&#39;``,</span>
 <span class="sd">        ``&#39;pitch_angle&#39;``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cache_path</span> <span class="o">=</span> <span class="n">_fast_cdf_dataset_cache_path</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">,</span> <span class="n">variable_names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cache_path</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cache_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cache_file</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">cache_file</span><span class="p">)</span>
+
     <span class="k">with</span> <span class="n">cdflib</span><span class="o">.</span><span class="n">CDF</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">cdf_file</span><span class="p">:</span>
         <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cdf_file</span><span class="o">.</span><span class="n">varget</span><span class="p">(</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cdf_file</span><span class="o">.</span><span class="n">varget</span><span class="p">(</span><span class="n">variable_names</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
@@ -303,7 +344,12 @@
     <span class="n">pitch_angle</span> <span class="o">=</span> <span class="n">pitch_angle_full</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">pitch_angle_full</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="n">pitch_angle_full</span>
     <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span> <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">pitch_angle</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;times&quot;</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span> <span class="s2">&quot;pitch_angle&quot;</span><span class="p">:</span> <span class="n">pitch_angle</span><span class="p">}</span></div>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;times&quot;</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span> <span class="s2">&quot;pitch_angle&quot;</span><span class="p">:</span> <span class="n">pitch_angle</span><span class="p">}</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">FAST_CDF_DATASET_CACHE_DIR</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cache_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cache_file</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">cache_file</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
 
 </pre></div>
 
