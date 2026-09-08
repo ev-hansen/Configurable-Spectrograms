@@ -30,6 +30,7 @@ from pathlib import Path
 
 from configurable_spectrograms.cdf_utils import load_fast_cdf_dataset
 from configurable_spectrograms.plotting import generic_plot_spectrogram_set
+from configurable_spectrograms.styling import configure_matplotlib, quiet_cdflib_noise
 
 
 def render_single_spectrogram(
@@ -93,6 +94,8 @@ def render_single_spectrogram(
 
 def main() -> int:
     """Parse CLI arguments and render a single generic spectrogram figure."""
+    quiet_cdflib_noise()
+    configure_matplotlib()
     parser = argparse.ArgumentParser(description="Render a single generic spectrogram figure from one CDF file.")
     parser.add_argument("--cdf-file", required=True, help="Path to the CDF file to plot.")
     parser.add_argument("--output", required=True, help="Destination PNG file path.")

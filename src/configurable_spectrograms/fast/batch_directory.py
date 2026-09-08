@@ -25,6 +25,7 @@ from configurable_spectrograms.fast.orbit_discovery import (
 from configurable_spectrograms.fast.process_orbit import FAST_process_single_orbit
 from configurable_spectrograms.logging_utils import configure_log_batch, flush_log_buffer, log_exception
 from configurable_spectrograms.process_utils import terminate_all_child_processes
+from configurable_spectrograms.text_tables import format_aligned_table
 
 _INSTRUMENT_KEYS = ("ees", "eeb", "ies", "ieb")
 
@@ -429,6 +430,16 @@ def FAST_plot_spectrograms_directory(
             y_scale,
             z_scale,
         )
+
+    status_counts = {
+        status: sum(1 for r in results if r.get("status") == status) for status in ("ok", "error", "timeout")
+    }
+    summary_table = format_aligned_table(
+        header=["Status", "Count"],
+        rows=[[status, count] for status, count in status_counts.items()] + [["total", len(results)]],
+        blank_line_before_last_row=True,
+    )
+    log_exception(f"[BATCH] {y_scale}/{z_scale} directory batch complete:\n{summary_table}", level="message")
 
     return results
 

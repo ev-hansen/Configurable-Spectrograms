@@ -31,6 +31,7 @@ import sys
 from configurable_spectrograms.cdf_utils import load_filtered_orbits
 from configurable_spectrograms.fast.orbit_discovery import discover_orbit_files, extract_orbit_and_instrument
 from configurable_spectrograms.fast.plotting import FAST_plot_instrument_grid, FAST_plot_pitch_angle_grid
+from configurable_spectrograms.styling import configure_matplotlib, quiet_cdflib_noise
 
 
 def render_single_pitch_angle_grid(
@@ -136,6 +137,8 @@ def render_single_instrument_grid(
 
 def main() -> int:
     """Parse CLI arguments and render a single FAST ESA spectrogram figure."""
+    quiet_cdflib_noise()
+    configure_matplotlib()
     parser = argparse.ArgumentParser(description="Render a single FAST ESA spectrogram figure.")
     mode_group = parser.add_mutually_exclusive_group(required=True)
     mode_group.add_argument("--cdf-file", help="Single CDF file to render as a pitch-angle grid.")

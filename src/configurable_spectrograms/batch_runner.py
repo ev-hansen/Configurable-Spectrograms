@@ -21,6 +21,7 @@ from typing import Any
 
 from configurable_spectrograms.logging_utils import configure_log_batch, flush_log_buffer, log_error, log_message
 from configurable_spectrograms.process_utils import terminate_all_child_processes
+from configurable_spectrograms.text_tables import format_aligned_table
 
 
 def _sigint_handler(signum, frame) -> None:
@@ -163,13 +164,13 @@ def run_batch(
 
     _flush_progress(force=True)
     flush_log_buffer(force=True)
-    log_message(
-        "[BATCH] Completed batch run: "
-        f"{processed_item_count} processed (ok={sum(1 for _, s in results if s == 'ok')} "
-        f"no_data={sum(1 for _, s in results if s == 'no_data')} "
-        f"error={sum(1 for _, s in results if s == 'error')})",
-        force_flush=True,
+    status_counts = {status: sum(1 for _, s in results if s == status) for status in ("ok", "no_data", "error")}
+    summary_table = format_aligned_table(
+        header=["Status", "Count"],
+        rows=[[status, count] for status, count in status_counts.items()] + [["total", processed_item_count]],
+        blank_line_before_last_row=True,
     )
+    log_message(f"[BATCH] Completed batch run:\n{summary_table}", force_flush=True)
     if install_signal_handlers and previous_sigint is not None:
         try:
             signal.signal(signal.SIGINT, previous_sigint)

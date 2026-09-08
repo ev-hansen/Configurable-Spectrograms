@@ -8,7 +8,7 @@ exclude: library_install_tests/
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v6.0.0
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
@@ -16,12 +16,12 @@ repos:
     -   id: debug-statements
 - repo: https://github.com/astral-sh/ty-pre-commit
   # ty version.
-  rev: v0.0.65
+  rev: v0.0.79
   hooks:
     - id: ty
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
-  rev: v0.16.0
+  rev: v0.16.6
   hooks:
     # Run the linter.
     - id: ruff-check

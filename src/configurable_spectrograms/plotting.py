@@ -22,6 +22,7 @@ from matplotlib import _pylab_helpers  # noqa: E402
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas  # noqa: E402
 from matplotlib.dates import date2num  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
+from matplotlib.ticker import LogLocator, MaxNLocator, NullFormatter  # noqa: E402
 
 from configurable_spectrograms.constants import (  # noqa: E402
     AXIS_LABEL_FONT_SIZE,
@@ -46,6 +47,33 @@ _CUSP_MARKER_DRAWERS = {
 #: Colormaps whose high end is already red, so the cusp line marker's top
 #: line switches to white to stay visible against it.
 _RED_HEAVY_COLORMAPS = {"turbo"}
+
+
+def _bold_log_tick_label(value: float) -> str:
+    """Format an exact power of ten as a bold ``$\\mathbf{10^{n}}$`` tick
+    label, or ``""`` for anything else (a non-power-of-ten value, or a
+    non-positive one a log scale can't represent).
+
+    Uses matplotlib's built-in mathtext (``\\mathbf`` inside ``$...$``),
+    not a real LaTeX ``\\textbf`` -- unlike a genuine LaTeX bold command,
+    this renders correctly with matplotlib's default ``text.usetex=False``,
+    so it doesn't depend on a LaTeX toolchain being installed.
+
+    Examples
+    --------
+    >>> _bold_log_tick_label(100)
+    '$\\\\mathbf{10^{2}}$'
+    >>> _bold_log_tick_label(150)
+    ''
+    >>> _bold_log_tick_label(0)
+    ''
+    """
+    if value <= 0:
+        return ""
+    exponent = int(round(np.log10(value)))
+    if not np.isclose(value, 10**exponent):
+        return ""
+    return f"$\\mathbf{{10^{{{exponent}}}}}$"
 
 
 def close_all_axes_and_clear(fig) -> None:
@@ -289,20 +317,12 @@ def make_spectrogram(
         max_exponent = int(np.ceil(np.log10(z_axis_max)))
         ticks = [10**i for i in range(min_exponent, max_exponent + 1) if z_axis_min <= 10**i <= z_axis_max]
 
-        def log_tick_formatter(value, position=None):
-            if value <= 0:
-                return ""
-            exponent = int(np.log10(value))
-            if np.isclose(value, 10**exponent):
-                return f"$10^{{{exponent}}}$"
-            return ""
-
         colorbar = fig.colorbar(
             im,
             ax=axis_object,
             label=z_axis_label if z_axis_label is not None else "Counts",
             ticks=ticks,
-            format=log_tick_formatter,
+            format=lambda value, position=None: _bold_log_tick_label(value),
         )
     else:
         z_axis_min = float(z_axis_min)
@@ -335,32 +355,45 @@ def make_spectrogram(
 
     if len(y_axis) >= 2:
         if y_axis_scale_function != "log":
-            y_max_str = str(y_axis_max)
-            y_max_digits = len(y_max_str)
-            y_first_digit = int(y_max_str[0])
-            y_second_digit = int(y_max_str[1])
-            if y_second_digit >= 5:
-                step_size = 10**y_max_digits
-                y_max_tick = y_first_digit * 10 ** (y_max_digits - 1)
-            else:
-                step_size = 10 ** (y_max_digits - 1)
-                y_max_tick = (y_first_digit + 0.5) * 10 ** (y_max_digits - 1)
-            yticks = [i for i in range(y_axis_min, int(y_max_tick) + 1, step_size) if (i / y_max_tick) <= 1.1]
-            if len(yticks) > 0:
-                axis_object.set_yticks(yticks)
-                axis_object.set_yticklabels([f"{int(e)}" for e in yticks])
+            # MaxNLocator picks round-number ticks (1/2/5 x a power of ten)
+            # covering [y_axis_min, y_axis_max] regardless of magnitude --
+            # unlike the digit-string-parsing this replaced, it doesn't
+            # assume y_axis_max is a >=2-digit integer (that assumption
+            # raised IndexError/ValueError for any y_axis_max below 10 or
+            # with a fractional part, both reachable here since generic
+            # callers infer y_axis_max from a dataset's own energy values).
+            axis_object.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10], min_n_ticks=3))
         else:
             axis_object.set_yscale("log")
+            # Explicit major/minor log locators instead of matplotlib's
+            # default: major ticks land only on exact powers of ten
+            # (bold-labeled), minor ticks at the standard 2-9x
+            # sub-divisions with no labels -- the default LogLocator can
+            # otherwise label some non-decade values too, cluttering a
+            # narrow energy-axis panel.
+            axis_object.yaxis.set_major_locator(LogLocator(base=10.0, subs=[1.0], numticks=15))
+            axis_object.yaxis.set_minor_locator(LogLocator(base=10.0, subs=(2, 3, 4, 5, 6, 7, 8, 9), numticks=15))
+            axis_object.yaxis.set_major_formatter(lambda value, position=None: _bold_log_tick_label(value))
+            axis_object.yaxis.set_minor_formatter(NullFormatter())
 
     if x_axis_is_unix:
         x_limits = axis_object.get_xlim()
         left_datetime = mdates.num2date(x_limits[0], tz=timezone.utc)
         right_datetime = mdates.num2date(x_limits[1], tz=timezone.utc)
         displayed_time_range_seconds = (right_datetime - left_datetime).total_seconds()
+        # Graduated by displayed span rather than a single <120s cutoff:
+        # a zoom window needs second-level precision, an orbit or a few
+        # hours reads fine as bare HH:MM, but a span of six hours or
+        # more (e.g. a full-day batch-download plot) needs the date too
+        # -- HH:MM alone would otherwise repeat across midnight with no
+        # way to tell which day a given tick belongs to.
         if displayed_time_range_seconds < 120:
-            axis_object.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S", tz=timezone.utc))
+            time_format = "%H:%M:%S"
+        elif displayed_time_range_seconds < 6 * 3600:
+            time_format = "%H:%M"
         else:
-            axis_object.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=timezone.utc))
+            time_format = "%m-%d %H:%M"
+        axis_object.xaxis.set_major_formatter(mdates.DateFormatter(time_format, tz=timezone.utc))
 
     if vertical_lines_unix is not None and len(vertical_lines_unix) > 0:
         if x_axis_is_unix:

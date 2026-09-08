@@ -4,6 +4,9 @@ import calendar
 import datetime as dt
 import functools
 import os
+import threading
+import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
@@ -27,15 +30,85 @@ DEFAULT_FOLDER: str = "./FAST_data/"
 FAST_MIN_DATE: dt.date = dt.date(1996, 8, 21)
 FAST_MAX_DATE: dt.date = dt.date(2009, 5, 4)
 
+# CDA Web occasionally rate-limits (HTTP 429) or drops a connection under the
+# concurrent request load download_cdf_files_threaded's thread pool
+# generates; a 429 window usually clears within a couple of minutes, longer
+# than a single unretried request would ever wait out on its own.
+DOWNLOAD_RETRY_DELAYS: tuple[float, ...] = (30.0, 60.0, 120.0, 240.0)
+#: Floor on how often any thread may start a new request, tracked via
+#: ``_last_request_finished_at`` below -- a burst of threads firing the
+#: instant the pacing window opens is itself enough request rate to draw a
+#: 429, even with no two requests ever truly overlapping.
+MIN_REQUEST_INTERVAL_SECONDS: float = 1.0
+
+_request_lock = threading.Lock()
+_last_request_finished_at: float = 0.0
+
+
+def _paced_request(
+    request_fn: Callable[[], requests.Response],
+    min_interval: float = MIN_REQUEST_INTERVAL_SECONDS,
+) -> requests.Response:
+    """Call *request_fn*, paced to at least *min_interval* seconds since the
+    previous call across every calling thread, serialized through a shared
+    lock so concurrent download threads don't all fire their next request
+    the instant the pacing window opens. Propagates whatever *request_fn*
+    raises.
+    """
+    global _last_request_finished_at
+    with _request_lock:
+        remaining = min_interval - (time.monotonic() - _last_request_finished_at)
+        if remaining > 0:
+            time.sleep(remaining)
+        try:
+            return request_fn()
+        finally:
+            _last_request_finished_at = time.monotonic()
+
+
+def _request_with_retry(
+    request_fn: Callable[[], requests.Response],
+    delays: tuple[float, ...] = DOWNLOAD_RETRY_DELAYS,
+    min_interval: float = MIN_REQUEST_INTERVAL_SECONDS,
+) -> requests.Response:
+    """Call *request_fn* (a zero-argument ``requests.get`` wrapper) via
+    :func:`_paced_request`, retrying with an increasing pause (*delays*) on
+    a network error or an HTTP 429 response.
+
+    The final attempt, once *delays* is exhausted, isn't caught: a network
+    error propagates as-is, and a still-429 response is turned into a
+    ``requests.exceptions.HTTPError`` via ``raise_for_status()`` rather than
+    being returned as if it were a normal response.
+    """
+    for attempt, delay in enumerate(delays, start=1):
+        try:
+            response = _paced_request(request_fn, min_interval)
+        except requests.exceptions.RequestException as exc:
+            reason = str(exc)
+        else:
+            if response.status_code != 429:
+                return response
+            reason = "HTTP 429"
+        log_error(f"[DOWNLOAD] {reason} on attempt {attempt} -- retrying in {delay:.0f}s")
+        time.sleep(delay)
+
+    response = _paced_request(request_fn, min_interval)
+    response.raise_for_status()
+    return response
+
 
 def _download_single_cdf_file(download_link: str, output_file: str) -> None:
     """Stream one CDF file from *download_link* to *output_file*.
 
     Falls back to a single non-streamed write only when the server omits a
     ``Content-Length`` header, which avoids buffering the whole response in
-    memory for every ordinary download.
+    memory for every ordinary download. Retried/paced via
+    :func:`_request_with_retry`, and status-checked before writing -- a bare
+    ``requests.get`` here previously had no way to notice a rate-limit
+    response and would silently write it to disk as if it were the real CDF.
     """
-    response = requests.get(download_link, stream=True)
+    response = _request_with_retry(lambda: requests.get(download_link, stream=True))
+    response.raise_for_status()
     if response.headers.get("content-length") is None:
         with open(output_file, "wb") as f:
             f.write(response.content)
@@ -52,7 +125,8 @@ def _list_instrument_page_files(page: str) -> list[str]:
     #     https://web.archive.org/web/20250630144357/https://www.scrapingbee.com/webscraping-questions/beautifulsoup/how-to-find-all-links-using-beautifulsoup-and-python/
     # archived code by Amjad Hussain Syed's on stack overflow:
     #     https://web.archive.org/web/20250630134956/https://stackoverflow.com/questions/68969647/download-all-files-with-extension-from-a-page
-    response = requests.get(page)
+    response = _request_with_retry(lambda: requests.get(page))
+    response.raise_for_status()
     soup = BeautifulSoup(response.content, "html.parser")
     return [href for a in soup.find_all("a") if isinstance(href := a.get("href"), str) and ".cdf" in href]
 
@@ -213,17 +287,14 @@ def _discover_download_targets(
                 os.makedirs(fast_data_folder, exist_ok=True)
                 page = f"{base_url}/{instrument}/{year}/{web_folder}"
                 try:
-                    response = requests.get(page)
+                    file_names = _list_instrument_page_files(page)
                 except requests.RequestException as exc:
                     log_error(f"[DOWNLOAD] Failed to load listing page {page}: {exc}")
                     continue
-                soup = BeautifulSoup(response.content, "html.parser")
-                for link in soup.find_all("a"):
-                    file_name = link.get("href")
-                    if file_name and ".cdf" in file_name:
-                        output_file = f"{fast_data_folder}/{file_name}"
-                        if not os.path.exists(output_file):
-                            targets.append((f"{page}/{file_name}", output_file))
+                for file_name in file_names:
+                    output_file = f"{fast_data_folder}/{file_name}"
+                    if not os.path.exists(output_file):
+                        targets.append((f"{page}/{file_name}", output_file))
     return targets
 
 
