@@ -96,8 +96,8 @@ terminates abnormally.</p></li>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">batch_multi_plot_FAST_spectrograms</span><span class="w"> </span><span class="kn">import</span> <span class="n">FAST_plot_spectrograms_directory</span>
 
 <span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-    <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+    <span class="n">input_dir</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">"FAST_plots"</span><span class="p">,</span>
     <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>          <span class="c1"># write extrema/progress every 10 orbits</span>
     <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>      <span class="c1"># log buffer larger than JSON flush</span>
 <span class="p">)</span>
@@ -135,17 +135,17 @@ high dynamic range does not wash out contrast for another.</p>
 <span class="p">)</span>
 
 <span class="n">extrema</span> <span class="o">=</span> <span class="n">compute_global_extrema</span><span class="p">(</span>
-  <span class="n">directory_path</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-  <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-  <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
+  <span class="n">directory_path</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+  <span class="n">y_scale</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span>
+  <span class="n">z_scale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span>
   <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Each row in multi-instrument figures now receives its own limits</span>
 <span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-  <span class="n">directory_path</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-  <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-  <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
+  <span class="n">directory_path</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+  <span class="n">y_scale</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span>
+  <span class="n">z_scale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span>
   <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
   <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
 <span class="p">)</span>
@@ -163,8 +163,8 @@ visual detail.</p>
 
 <span class="c1"># Process all orbits with default batching (10) and logging</span>
 <span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>      <span class="c1"># path containing CDF files</span>
-  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>    <span class="c1"># destination for generated figures</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>      <span class="c1"># path containing CDF files</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">"FAST_plots"</span><span class="p">,</span>    <span class="c1"># destination for generated figures</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -172,10 +172,10 @@ visual detail.</p>
 <section id="custom-batching-and-logging">
 <h3>Custom Batching and Logging<a class="headerlink" href="#custom-batching-and-logging" title="Link to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
-  <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-  <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">"FAST_plots"</span><span class="p">,</span>
+  <span class="n">y_scale</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span>
+  <span class="n">z_scale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span>
   <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>          <span class="c1"># write extrema/progress every 25 orbits</span>
   <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>      <span class="c1"># less frequent log writes</span>
   <span class="n">max_workers</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>                <span class="c1"># increase parallelism</span>
@@ -190,16 +190,16 @@ visual detail.</p>
 <p>If execution is interrupted, re-running with the same parameters resumes from the
 last recorded orbit per scale combination (unless <code class="docutils literal notranslate"><span class="pre">ignore_progress_json=True</span></code>):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">"FAST_plots"</span><span class="p">,</span>
   <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
 <span class="p">)</span>  <span class="c1"># continues where previous run left off</span>
 </pre></div>
 </div>
 <p>Forcing a Fresh Pass (ignoring prior progress):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">"FAST_plots"</span><span class="p">,</span>
   <span class="n">ignore_progress_json</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># disregard existing progress JSON</span>
 <span class="p">)</span>
 </pre></div>
@@ -210,18 +210,18 @@ last recorded orbit per scale combination (unless <code class="docutils literal 
 <p>You can call the internal extrema routine directly to precompute ranges without plotting:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">batch_multi_plot_FAST_spectrograms</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_global_extrema</span>  <span class="c1"># if re-exported</span>
 <span class="c1"># (If not publicly exported, call through the plotting module or duplicate logic.)</span>
-<span class="c1"># When calling directly you can still specify the intensity percentile as &#39;max_percentile&#39;.</span>
+<span class="c1"># When calling directly you can still specify the intensity percentile as 'max_percentile'.</span>
 <span class="c1"># The energy (Y) coverage threshold remains fixed at 99% of cumulative positive samples.</span>
 <span class="n">state</span> <span class="o">=</span> <span class="n">compute_global_extrema</span><span class="p">(</span>
-  <span class="n">directory_path</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-  <span class="n">y_scale</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-  <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
-  <span class="n">instrument_order</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="s2">&quot;eeb&quot;</span><span class="p">,</span> <span class="s2">&quot;ies&quot;</span><span class="p">,</span> <span class="s2">&quot;ieb&quot;</span><span class="p">),</span>
-  <span class="n">extrema_json_path</span><span class="o">=</span><span class="s2">&quot;FAST_calculated_extrema.json&quot;</span><span class="p">,</span>
+  <span class="n">directory_path</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+  <span class="n">y_scale</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span>
+  <span class="n">z_scale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span>
+  <span class="n">instrument_order</span><span class="o">=</span><span class="p">(</span><span class="s2">"ees"</span><span class="p">,</span> <span class="s2">"eeb"</span><span class="p">,</span> <span class="s2">"ies"</span><span class="p">,</span> <span class="s2">"ieb"</span><span class="p">),</span>
+  <span class="n">extrema_json_path</span><span class="o">=</span><span class="s2">"FAST_calculated_extrema.json"</span><span class="p">,</span>
   <span class="n">max_percentile</span><span class="o">=</span><span class="mf">95.0</span><span class="p">,</span>      <span class="c1"># matches FAST_plot_spectrograms_directory default</span>
   <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Updated extrema keys:&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_z_max&quot;</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Updated extrema keys:"</span><span class="p">,</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_z_max"</span><span class="p">)])</span>
 </pre></div>
 </div>
 </section>
@@ -229,8 +229,8 @@ last recorded orbit per scale combination (unless <code class="docutils literal 
 <h3>Tight Loop / Immediate Persistence<a class="headerlink" href="#tight-loop-immediate-persistence" title="Link to this heading">¶</a></h3>
 <p>Set <code class="docutils literal notranslate"><span class="pre">flush_batch_size=1</span></code> for maximum safety (higher I/O volume):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">"FAST_plots"</span><span class="p">,</span>
   <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>       <span class="c1"># per-orbit JSON writes</span>
   <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>   <span class="c1"># immediate log emission</span>
 <span class="p">)</span>
@@ -241,8 +241,8 @@ last recorded orbit per scale combination (unless <code class="docutils literal 
 <h3>High-Throughput Bulk Mode<a class="headerlink" href="#high-throughput-bulk-mode" title="Link to this heading">¶</a></h3>
 <p>On fast local SSDs you can increase both batch sizes to reduce writes further:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FAST_plot_spectrograms_directory</span><span class="p">(</span>
-  <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;FAST_data&quot;</span><span class="p">,</span>
-  <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;FAST_plots&quot;</span><span class="p">,</span>
+  <span class="n">input_dir</span><span class="o">=</span><span class="s2">"FAST_data"</span><span class="p">,</span>
+  <span class="n">output_dir</span><span class="o">=</span><span class="s2">"FAST_plots"</span><span class="p">,</span>
   <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
   <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
   <span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>

@@ -31,12 +31,12 @@
           <div class="body" role="main">
             
   <h1>Source code for configurable_spectrograms.cdf_utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;CDF file discovery, metadata, and dataset-loading helpers.</span>
+<span></span><span class="sd">"""CDF file discovery, metadata, and dataset-loading helpers.</span>
 
 <span class="sd">Shared by both the generic and FAST-specific plotting/batch pipelines so</span>
 <span class="sd">that file-type detection, orbit-boundary lookup, and CDF loading logic</span>
 <span class="sd">exists in exactly one place.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
@@ -55,7 +55,7 @@
 <span class="n">orbit_column_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="n">cdf_type_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
-<span class="n">INSTRUMENT_TAGS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="s2">&quot;eeb&quot;</span><span class="p">,</span> <span class="s2">&quot;ies&quot;</span><span class="p">,</span> <span class="s2">&quot;ieb&quot;</span><span class="p">)</span>
+<span class="n">INSTRUMENT_TAGS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"ees"</span><span class="p">,</span> <span class="s2">"eeb"</span><span class="p">,</span> <span class="s2">"ies"</span><span class="p">,</span> <span class="s2">"ieb"</span><span class="p">)</span>
 
 <span class="c1"># On-disk cache for load_fast_cdf_dataset, one pickle file per (CDF file,</span>
 <span class="c1"># variable set) pair. Unlike the in-memory dicts above, this survives</span>
@@ -64,17 +64,17 @@
 <span class="c1"># orbit/day skips re-reading and re-reshaping the CDF entirely. Entries are</span>
 <span class="c1"># only written lazily as files are actually loaded -- nothing is ever</span>
 <span class="c1"># pre-populated in bulk -- and there is no staleness check or eviction:</span>
-<span class="c1"># a FAST CDF file&#39;s contents don&#39;t change once downloaded under a given</span>
+<span class="c1"># a FAST CDF file's contents don't change once downloaded under a given</span>
 <span class="c1"># filename, so invalidation (if ever needed) is just deleting the cache</span>
 <span class="c1"># file or the whole directory. The directory itself is created lazily, on</span>
 <span class="c1"># first cache write, not as an import-time side effect.</span>
-<span class="n">FAST_CDF_DATASET_CACHE_DIR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./cache/fast_cdf_datasets&quot;</span>
+<span class="n">FAST_CDF_DATASET_CACHE_DIR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"./cache/fast_cdf_datasets"</span>
 
 
 <div class="viewcode-block" id="load_filtered_orbits">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.load_filtered_orbits">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_filtered_orbits</span><span class="p">(</span><span class="n">csv_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">FILTERED_ORBITS_CSV_PATH</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load the filtered orbits CSV with a simple cache.</span>
+<span class="w">    </span><span class="sd">"""Load the filtered orbits CSV with a simple cache.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -90,13 +90,13 @@
 <span class="sd">    -----</span>
 <span class="sd">    A module-level dictionary caches previously loaded DataFrames keyed by</span>
 <span class="sd">    the path string to avoid repeated disk I/O in batch routines.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">csv_path</span> <span class="ow">in</span> <span class="n">filtered_orbits_cache</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">filtered_orbits_cache</span><span class="p">[</span><span class="n">csv_path</span><span class="p">]</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csv_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csv_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading CSV </span><span class="si">{</span><span class="n">csv_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error loading CSV </span><span class="si">{</span><span class="n">csv_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="n">filtered_orbits_cache</span><span class="p">[</span><span class="n">csv_path</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataframe</span>
     <span class="k">return</span> <span class="n">dataframe</span></div>
@@ -111,7 +111,7 @@
     <span class="n">instrument_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">time_unix_array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute orbit boundary UNIX timestamps from filtered indices.</span>
+<span class="w">    </span><span class="sd">"""Compute orbit boundary UNIX timestamps from filtered indices.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -121,7 +121,7 @@
 <span class="sd">    orbit_number : int</span>
 <span class="sd">        Orbit number to look up.</span>
 <span class="sd">    instrument_type : str or None</span>
-<span class="sd">        Instrument type identifier (e.g. ``&#39;ees&#39;``, ``&#39;ies&#39;``).</span>
+<span class="sd">        Instrument type identifier (e.g. ``'ees'``, ``'ies'``).</span>
 <span class="sd">    time_unix_array : numpy.ndarray or None</span>
 <span class="sd">        1D array of UNIX timestamps for the instrument.</span>
 
@@ -137,24 +137,24 @@
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; orbits = pd.DataFrame({&quot;orbit&quot;: [42], &quot;ees min index&quot;: [1], &quot;ees max index&quot;: [3]})</span>
+<span class="sd">    &gt;&gt;&gt; orbits = pd.DataFrame({"orbit": [42], "ees min index": [1], "ees max index": [3]})</span>
 <span class="sd">    &gt;&gt;&gt; times = np.array([100.0, 200.0, 300.0, 400.0])</span>
-<span class="sd">    &gt;&gt;&gt; get_timestamps_for_orbit(orbits, 42, &quot;ees&quot;, times)</span>
+<span class="sd">    &gt;&gt;&gt; get_timestamps_for_orbit(orbits, 42, "ees", times)</span>
 <span class="sd">    [200.0, 400.0]</span>
-<span class="sd">    &gt;&gt;&gt; get_timestamps_for_orbit(orbits, 99, &quot;ees&quot;, times)</span>
+<span class="sd">    &gt;&gt;&gt; get_timestamps_for_orbit(orbits, 99, "ees", times)</span>
 <span class="sd">    []</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">dataframe</span> <span class="o">=</span> <span class="n">filtered_orbits_dataframe</span>
     <span class="k">if</span> <span class="n">dataframe</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">instrument_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">time_unix_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[]</span>
     <span class="n">cache_key</span> <span class="o">=</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">dataframe</span><span class="p">),</span> <span class="n">instrument_type</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">orbit_column_cache</span><span class="p">:</span>
-        <span class="n">orbit_column</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">&quot;orbit&quot;</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">orbit_column</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">"orbit"</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
         <span class="n">min_index_column</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
-            <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">instrument_type</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">&quot;min index&quot;</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">instrument_type</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">"min index"</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="n">max_index_column</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
-            <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">instrument_type</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">&quot;max index&quot;</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">instrument_type</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">and</span> <span class="s2">"max index"</span> <span class="ow">in</span> <span class="n">col</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="n">orbit_column_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">orbit_column</span><span class="p">,</span> <span class="n">min_index_column</span><span class="p">,</span> <span class="n">max_index_column</span><span class="p">)</span>
     <span class="n">orbit_column</span><span class="p">,</span> <span class="n">min_index_column</span><span class="p">,</span> <span class="n">max_index_column</span> <span class="o">=</span> <span class="n">orbit_column_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
@@ -167,7 +167,7 @@
     <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.logging_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_message</span>
 
-        <span class="n">log_message</span><span class="p">(</span><span class="s2">&quot;[WARN] Non-integer indices found in orbit row, using 0.&quot;</span><span class="p">)</span>
+        <span class="n">log_message</span><span class="p">(</span><span class="s2">"[WARN] Non-integer indices found in orbit row, using 0."</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">[]</span>
     <span class="n">min_index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">min_index</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_unix_array</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
     <span class="n">max_index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_index</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_unix_array</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
@@ -180,7 +180,7 @@
 <div class="viewcode-block" id="get_cdf_file_type">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.get_cdf_file_type">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_cdf_file_type</span><span class="p">(</span><span class="n">cdf_file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Infer instrument type from a CDF file path.</span>
+<span class="w">    </span><span class="sd">"""Infer instrument type from a CDF file path.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -190,23 +190,23 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    str or None</span>
-<span class="sd">        Instrument type string (e.g. ``&#39;ees&#39;``), ``&#39;orb&#39;`` for orbit files,</span>
+<span class="sd">        Instrument type string (e.g. ``'ees'``), ``'orb'`` for orbit files,</span>
 <span class="sd">        or ``None`` if not recognized.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; get_cdf_file_type(&quot;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&quot;)</span>
-<span class="sd">    &#39;eeb&#39;</span>
-<span class="sd">    &gt;&gt;&gt; get_cdf_file_type(&quot;fa_k0_orb_13312_v01.cdf&quot;)</span>
-<span class="sd">    &#39;orb&#39;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; get_cdf_file_type("fa_esa_l2_eeb_20000101001737_13312_v02.cdf")</span>
+<span class="sd">    'eeb'</span>
+<span class="sd">    &gt;&gt;&gt; get_cdf_file_type("fa_k0_orb_13312_v01.cdf")</span>
+<span class="sd">    'orb'</span>
+<span class="sd">    """</span>
     <span class="n">path_lower</span> <span class="o">=</span> <span class="n">cdf_file_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="k">if</span> <span class="s2">&quot;_orb_&quot;</span> <span class="ow">in</span> <span class="n">path_lower</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;orb&quot;</span>
+    <span class="k">if</span> <span class="s2">"_orb_"</span> <span class="ow">in</span> <span class="n">path_lower</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"orb"</span>
     <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">INSTRUMENT_TAGS</span><span class="p">:</span>
-        <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">_&quot;</span> <span class="ow">in</span> <span class="n">path_lower</span><span class="p">:</span>
+        <span class="k">if</span> <span class="sa">f</span><span class="s2">"_</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">_"</span> <span class="ow">in</span> <span class="n">path_lower</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">tag</span>
-    <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown CDF file type for path: </span><span class="si">{</span><span class="n">cdf_file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown CDF file type for path: </span><span class="si">{</span><span class="n">cdf_file_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">None</span></div>
 
 
@@ -214,7 +214,7 @@
 <div class="viewcode-block" id="get_variable_shape">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.get_variable_shape">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_variable_shape</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the shape of a variable in a CDF file.</span>
+<span class="w">    </span><span class="sd">"""Return the shape of a variable in a CDF file.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -228,19 +228,19 @@
 <span class="sd">    tuple or None</span>
 <span class="sd">        Variable shape tuple, or ``None`` if the variable is absent, not an</span>
 <span class="sd">        array, or an error occurs.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">instrument_type</span> <span class="o">=</span> <span class="n">cdf_type_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">instrument_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">instrument_type</span> <span class="o">=</span> <span class="n">get_cdf_file_type</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span>
         <span class="n">cdf_type_cache</span><span class="p">[</span><span class="n">cdf_path</span><span class="p">]</span> <span class="o">=</span> <span class="n">instrument_type</span>
-    <span class="k">if</span> <span class="n">instrument_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">instrument_type</span> <span class="o">==</span> <span class="s2">&quot;orb&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">instrument_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">instrument_type</span> <span class="o">==</span> <span class="s2">"orb"</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">cdflib</span><span class="o">.</span><span class="n">CDF</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">cdf</span><span class="p">:</span>
             <span class="n">variable_data</span> <span class="o">=</span> <span class="n">cdf</span><span class="o">.</span><span class="n">varget</span><span class="p">(</span><span class="n">variable_name</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">variable_data</span><span class="o">.</span><span class="n">shape</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error reading </span><span class="si">{</span><span class="n">cdf_path</span><span class="si">}</span><span class="s2"> for variable </span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error reading </span><span class="si">{</span><span class="n">cdf_path</span><span class="si">}</span><span class="s2"> for variable </span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
@@ -251,7 +251,7 @@
     <span class="n">cdf_folder_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">CDF_DATA_DIRECTORY</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">CDF_VARIABLE_NAMES</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Collect shapes of variables across CDF files in a folder.</span>
+<span class="w">    </span><span class="sd">"""Collect shapes of variables across CDF files in a folder.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -265,16 +265,16 @@
 <span class="sd">    dict</span>
 <span class="sd">        Mapping from variable name (str) to a list of shape tuples (or</span>
 <span class="sd">        ``None``) per file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">cdf_file_paths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Path</span><span class="p">(</span><span class="n">cdf_folder_path</span><span class="p">)</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">&quot;*.[cC][dD][fF]&quot;</span><span class="p">)]</span>
+<span class="sd">    """</span>
+    <span class="n">cdf_file_paths</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Path</span><span class="p">(</span><span class="n">cdf_folder_path</span><span class="p">)</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">"*.[cC][dD][fF]"</span><span class="p">)]</span>
     <span class="n">shapes_by_variable</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">variable_name</span> <span class="ow">in</span> <span class="n">variable_names</span><span class="p">:</span>
         <span class="n">shapes_by_variable</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">get_variable_shape</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">,</span> <span class="n">variable_name</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">cdf_path</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
                 <span class="n">cdf_file_paths</span><span class="p">,</span>
-                <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Processing CDF files (</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
-                <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">,</span>
+                <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Processing CDF files (</span><span class="si">{</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
+                <span class="n">unit</span><span class="o">=</span><span class="s2">"file"</span><span class="p">,</span>
                 <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">cdf_file_paths</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="p">]</span>
@@ -283,19 +283,19 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_fast_cdf_dataset_cache_path</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variable_names</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the on-disk cache path for one (CDF file, variable set) pair.</span>
+<span class="w">    </span><span class="sd">"""Build the on-disk cache path for one (CDF file, variable set) pair.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; _fast_cdf_dataset_cache_path(</span>
-<span class="sd">    ...     &quot;./FAST_data/2001/11/fa_esa_l2_eeb_20011130002554_20986_v02.cdf&quot;,</span>
-<span class="sd">    ...     (&quot;time_unix&quot;, &quot;data&quot;, &quot;energy&quot;, &quot;pitch_angle&quot;),</span>
+<span class="sd">    ...     "./FAST_data/2001/11/fa_esa_l2_eeb_20011130002554_20986_v02.cdf",</span>
+<span class="sd">    ...     ("time_unix", "data", "energy", "pitch_angle"),</span>
 <span class="sd">    ... )</span>
-<span class="sd">    &#39;./cache/fast_cdf_datasets/fa_esa_l2_eeb_20011130002554_20986_v02__time_unix_data_energy_pitch_angle.pkl&#39;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    './cache/fast_cdf_datasets/fa_esa_l2_eeb_20011130002554_20986_v02__time_unix_data_energy_pitch_angle.pkl'</span>
+<span class="sd">    """</span>
     <span class="n">file_stem</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
-    <span class="n">variable_suffix</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">variable_names</span><span class="p">)</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">FAST_CDF_DATASET_CACHE_DIR</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_stem</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">variable_suffix</span><span class="si">}</span><span class="s2">.pkl&quot;</span>
+    <span class="n">variable_suffix</span> <span class="o">=</span> <span class="s2">"_"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">variable_names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">FAST_CDF_DATASET_CACHE_DIR</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_stem</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">variable_suffix</span><span class="si">}</span><span class="s2">.pkl"</span>
 
 
 <div class="viewcode-block" id="load_fast_cdf_dataset">
@@ -303,7 +303,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">load_fast_cdf_dataset</span><span class="p">(</span>
     <span class="n">cdf_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variable_names</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">CDF_VARIABLE_NAMES</span><span class="p">)</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load and reshape a FAST CDF file&#39;s time/data/energy/pitch-angle arrays.</span>
+<span class="w">    </span><span class="sd">"""Load and reshape a FAST CDF file's time/data/energy/pitch-angle arrays.</span>
 
 <span class="sd">    Energy and pitch-angle variables are collapsed from their raw</span>
 <span class="sd">    ``(time, angle, energy)`` or ``(time, energy, angle)`` storage down to</span>
@@ -327,12 +327,12 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    dict</span>
-<span class="sd">        Mapping with keys ``&#39;times&#39;``, ``&#39;data&#39;``, ``&#39;energy&#39;``,</span>
-<span class="sd">        ``&#39;pitch_angle&#39;``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        Mapping with keys ``'times'``, ``'data'``, ``'energy'``,</span>
+<span class="sd">        ``'pitch_angle'``.</span>
+<span class="sd">    """</span>
     <span class="n">cache_path</span> <span class="o">=</span> <span class="n">_fast_cdf_dataset_cache_path</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">,</span> <span class="n">variable_names</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cache_path</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cache_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cache_file</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cache_path</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">cache_file</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">cache_file</span><span class="p">)</span>
 
     <span class="k">with</span> <span class="n">cdflib</span><span class="o">.</span><span class="n">CDF</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">cdf_file</span><span class="p">:</span>
@@ -344,10 +344,10 @@
     <span class="n">pitch_angle</span> <span class="o">=</span> <span class="n">pitch_angle_full</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">pitch_angle_full</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="n">pitch_angle_full</span>
     <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span> <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">pitch_angle</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-    <span class="n">dataset</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;times&quot;</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span> <span class="s2">&quot;pitch_angle&quot;</span><span class="p">:</span> <span class="n">pitch_angle</span><span class="p">}</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"times"</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span> <span class="s2">"energy"</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span> <span class="s2">"pitch_angle"</span><span class="p">:</span> <span class="n">pitch_angle</span><span class="p">}</span>
 
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">FAST_CDF_DATASET_CACHE_DIR</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cache_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cache_file</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cache_path</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">cache_file</span><span class="p">:</span>
         <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">cache_file</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">dataset</span></div>
 

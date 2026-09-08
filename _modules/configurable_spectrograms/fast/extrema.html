@@ -31,13 +31,13 @@
           <div class="body" role="main">
             
   <h1>Source code for configurable_spectrograms.fast.extrema</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Global axis-extrema computation for FAST batch plotting.</span>
+<span></span><span class="sd">"""Global axis-extrema computation for FAST batch plotting.</span>
 
 <span class="sd">:func:`compute_global_extrema` performs a resumable pass over instrument CDF</span>
 <span class="sd">files to determine shared, sensible axis limits (so every orbit in a batch</span>
 <span class="sd">run uses the same energy/intensity scale) before the main plotting pass</span>
 <span class="sd">begins.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
@@ -62,14 +62,14 @@
     <span class="n">y_scale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">z_scale</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract and round per-instrument axis limits from a global extrema dict.</span>
+<span class="w">    </span><span class="sd">"""Extract and round per-instrument axis limits from a global extrema dict.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    global_extrema : dict or None</span>
 <span class="sd">        Mapping produced by :func:`compute_global_extrema`, or ``None``.</span>
 <span class="sd">    inst : str</span>
-<span class="sd">        Instrument code (e.g. ``&#39;ees&#39;``).</span>
+<span class="sd">        Instrument code (e.g. ``'ees'``).</span>
 <span class="sd">    y_scale, z_scale : str</span>
 <span class="sd">        Axis-scale labels used to build the lookup key prefix.</span>
 
@@ -82,24 +82,24 @@
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; extrema = {&quot;ees_linear_linear_y_max&quot;: 1234, &quot;ees_linear_linear_z_min&quot;: 0.0123}</span>
-<span class="sd">    &gt;&gt;&gt; _extrema_overrides(extrema, &quot;ees&quot;, &quot;linear&quot;, &quot;linear&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; extrema = {"ees_linear_linear_y_max": 1234, "ees_linear_linear_z_min": 0.0123}</span>
+<span class="sd">    &gt;&gt;&gt; _extrema_overrides(extrema, "ees", "linear", "linear")</span>
 <span class="sd">    (None, 1300.0, 0.012, None)</span>
-<span class="sd">    &gt;&gt;&gt; _extrema_overrides(None, &quot;ees&quot;, &quot;linear&quot;, &quot;linear&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; _extrema_overrides(None, "ees", "linear", "linear")</span>
 <span class="sd">    (None, None, None, None)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">global_extrema</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
-    <span class="n">key_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">key_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_rounded</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">round_extrema</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">direction</span><span class="p">)</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">_rounded</span><span class="p">(</span><span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min&quot;</span><span class="p">),</span> <span class="s2">&quot;down&quot;</span><span class="p">),</span>
-        <span class="n">_rounded</span><span class="p">(</span><span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max&quot;</span><span class="p">),</span> <span class="s2">&quot;up&quot;</span><span class="p">),</span>
-        <span class="n">_rounded</span><span class="p">(</span><span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min&quot;</span><span class="p">),</span> <span class="s2">&quot;down&quot;</span><span class="p">),</span>
-        <span class="n">_rounded</span><span class="p">(</span><span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max&quot;</span><span class="p">),</span> <span class="s2">&quot;up&quot;</span><span class="p">),</span>
+        <span class="n">_rounded</span><span class="p">(</span><span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min"</span><span class="p">),</span> <span class="s2">"down"</span><span class="p">),</span>
+        <span class="n">_rounded</span><span class="p">(</span><span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max"</span><span class="p">),</span> <span class="s2">"up"</span><span class="p">),</span>
+        <span class="n">_rounded</span><span class="p">(</span><span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min"</span><span class="p">),</span> <span class="s2">"down"</span><span class="p">),</span>
+        <span class="n">_rounded</span><span class="p">(</span><span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max"</span><span class="p">),</span> <span class="s2">"up"</span><span class="p">),</span>
     <span class="p">)</span>
 
 
@@ -117,7 +117,7 @@
     <span class="n">log_floor_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">flush_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute (or incrementally update) cached axis extrema per instrument.</span>
+<span class="w">    </span><span class="sd">"""Compute (or incrementally update) cached axis extrema per instrument.</span>
 
 <span class="sd">    Performs a resumable pass over all instrument CDF files, flushing</span>
 <span class="sd">    incremental progress to ``extrema_json_path`` after each</span>
@@ -143,12 +143,12 @@
 <span class="sd">    ----------</span>
 <span class="sd">    directory_path : str</span>
 <span class="sd">        Root directory containing instrument CDF files.</span>
-<span class="sd">    y_scale : {&#39;linear&#39;, &#39;log&#39;}</span>
+<span class="sd">    y_scale : {'linear', 'log'}</span>
 <span class="sd">        Y scaling label (used for cache key names).</span>
-<span class="sd">    z_scale : {&#39;linear&#39;, &#39;log&#39;}</span>
+<span class="sd">    z_scale : {'linear', 'log'}</span>
 <span class="sd">        Z scaling label (used for cache key names).</span>
 <span class="sd">    instrument_order : iterable of str</span>
-<span class="sd">        Instruments to process (e.g., ``(&quot;ees&quot;, &quot;eeb&quot;, &quot;ies&quot;, &quot;ieb&quot;)``).</span>
+<span class="sd">        Instruments to process (e.g., ``("ees", "eeb", "ies", "ieb")``).</span>
 <span class="sd">    extrema_json_path : str, default FAST_EXTREMA_JSON_PATH</span>
 <span class="sd">        Path to the JSON cache file (created if absent).</span>
 <span class="sd">    compute_mins : bool, default False</span>
@@ -167,7 +167,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    dict</span>
 <span class="sd">        Updated extrema mapping containing values and progress entries.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">instrument_order</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">instrument_order</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
@@ -175,16 +175,16 @@
                 <span class="n">extrema_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_in</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">log_exception</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;[EXTREMA] Failed to read existing extrema JSON &#39;</span><span class="si">{</span><span class="n">extrema_json_path</span><span class="si">}</span><span class="s2">&#39; (starting fresh)&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"[EXTREMA] Failed to read existing extrema JSON '</span><span class="si">{</span><span class="n">extrema_json_path</span><span class="si">}</span><span class="s2">' (starting fresh)"</span><span class="p">,</span>
                 <span class="n">exc</span><span class="p">,</span>
-                <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">extrema_state</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">extrema_state</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_safe_log_transform</span><span class="p">(</span><span class="n">linear_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a linear-domain value to log10 with floor handling.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Convert a linear-domain value to log10 with floor handling."""</span>
         <span class="k">if</span> <span class="n">linear_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">log_floor_value</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -209,15 +209,15 @@
     <span class="n">total_discovered_files</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">total_files_per_instrument</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
     <span class="n">extrema_progress_bar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span>
         <span class="n">total</span><span class="o">=</span><span class="n">total_discovered_files</span><span class="p">,</span>
-        <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Extrema </span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">,</span>
+        <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Extrema </span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">unit</span><span class="o">=</span><span class="s2">"file"</span><span class="p">,</span>
         <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">disable</span><span class="o">=</span><span class="p">(</span><span class="n">total_discovered_files</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span>
     <span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">orbits_since_last_flush</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">last_orbit_global_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span>
+        <span class="n">last_orbit_global_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit"</span>
         <span class="n">last_processed_orbit_val</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">last_orbit_global_key</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">last_processed_orbit</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">int</span><span class="p">(</span><span class="n">last_processed_orbit_val</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">last_processed_orbit_val</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
@@ -227,53 +227,53 @@
             <span class="k">if</span> <span class="n">orbit_number</span> <span class="o">&lt;=</span> <span class="n">last_processed_orbit</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="k">for</span> <span class="n">instrument_name</span> <span class="ow">in</span> <span class="n">instrument_order</span><span class="p">:</span>
-                <span class="n">key_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="n">progress_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_extrema_progress&quot;</span>
+                <span class="n">key_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">"</span>
+                <span class="n">progress_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_extrema_progress"</span>
                 <span class="n">progress_entry</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">progress_key</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progress_entry</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">progress_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;complete&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">progress_entry</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">progress_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"complete"</span><span class="p">):</span>
                     <span class="k">continue</span>
 
-                <span class="n">y_is_log</span> <span class="o">=</span> <span class="n">y_scale</span> <span class="o">==</span> <span class="s2">&quot;log&quot;</span>
-                <span class="n">z_is_log</span> <span class="o">=</span> <span class="n">z_scale</span> <span class="o">==</span> <span class="s2">&quot;log&quot;</span>
-                <span class="n">ll_y_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_linear_linear_y_max&quot;</span>
-                <span class="n">ll_z_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_linear_linear_z_max&quot;</span>
-                <span class="n">ll_y_min_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_linear_linear_y_min&quot;</span>
-                <span class="n">ll_z_min_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_linear_linear_z_min&quot;</span>
+                <span class="n">y_is_log</span> <span class="o">=</span> <span class="n">y_scale</span> <span class="o">==</span> <span class="s2">"log"</span>
+                <span class="n">z_is_log</span> <span class="o">=</span> <span class="n">z_scale</span> <span class="o">==</span> <span class="s2">"log"</span>
+                <span class="n">ll_y_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_linear_linear_y_max"</span>
+                <span class="n">ll_z_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_linear_linear_z_max"</span>
+                <span class="n">ll_y_min_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_linear_linear_y_min"</span>
+                <span class="n">ll_z_min_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">_linear_linear_z_min"</span>
 
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">y_is_log</span> <span class="ow">and</span> <span class="n">ll_y_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="p">[</span><span class="n">ll_y_key</span><span class="p">]</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ll_y_min_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="p">[</span><span class="n">ll_y_key</span><span class="p">]</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ll_y_min_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">y_is_log</span> <span class="ow">and</span> <span class="n">ll_y_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_log_transform</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">[</span><span class="n">ll_y_key</span><span class="p">])</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_floor_value</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_log_transform</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">[</span><span class="n">ll_y_key</span><span class="p">])</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_floor_value</span>
 
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">z_is_log</span> <span class="ow">and</span> <span class="n">ll_z_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="p">[</span><span class="n">ll_z_key</span><span class="p">]</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ll_z_min_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="p">[</span><span class="n">ll_z_key</span><span class="p">]</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ll_z_min_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">z_is_log</span> <span class="ow">and</span> <span class="n">ll_z_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_log_transform</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">[</span><span class="n">ll_z_key</span><span class="p">])</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_floor_value</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_log_transform</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">[</span><span class="n">ll_z_key</span><span class="p">])</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_floor_value</span>
 
                 <span class="n">y_done</span> <span class="o">=</span> <span class="n">ll_y_key</span> <span class="ow">in</span> <span class="n">extrema_state</span>
                 <span class="n">z_done</span> <span class="o">=</span> <span class="n">ll_z_key</span> <span class="ow">in</span> <span class="n">extrema_state</span>
                 <span class="k">if</span> <span class="n">y_done</span> <span class="ow">and</span> <span class="n">z_done</span><span class="p">:</span>
                     <span class="n">total_for_inst</span> <span class="o">=</span> <span class="n">total_files_per_instrument</span><span class="p">[</span><span class="n">instrument_name</span><span class="p">]</span>
                     <span class="n">extrema_state</span><span class="p">[</span><span class="n">progress_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s2">&quot;processed_index&quot;</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">total_for_inst</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
-                        <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="n">total_for_inst</span><span class="p">,</span>
-                        <span class="s2">&quot;complete&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">"processed_index"</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">total_for_inst</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                        <span class="s2">"total"</span><span class="p">:</span> <span class="n">total_for_inst</span><span class="p">,</span>
+                        <span class="s2">"complete"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                     <span class="p">}</span>
                     <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="n">instrument_order</span><span class="p">:</span>
-                        <span class="n">extrema_state</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="n">extrema_state</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                     <span class="n">extrema_state</span><span class="p">[</span><span class="n">last_orbit_global_key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">sorted_orbit_numbers</span><span class="p">)</span> <span class="k">if</span> <span class="n">sorted_orbit_numbers</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
+                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
                             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">,</span> <span class="n">file_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                         <span class="n">log_exception</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;[EXTREMA] Failed to save extrema JSON after reuse for instrument=</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="sa">f</span><span class="s2">"[EXTREMA] Failed to save extrema JSON after reuse for instrument=</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                             <span class="n">exc</span><span class="p">,</span>
-                            <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                            <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="k">continue</span>
 
@@ -286,15 +286,15 @@
                         <span class="n">cdf_dataset</span> <span class="o">=</span> <span class="n">load_fast_cdf_dataset</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                         <span class="n">log_exception</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;[EXTREMA] Ingest failure inst=</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2"> orbit=</span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> file=</span><span class="si">{</span><span class="n">cdf_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="sa">f</span><span class="s2">"[EXTREMA] Ingest failure inst=</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2"> orbit=</span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> file=</span><span class="si">{</span><span class="n">cdf_path</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                             <span class="n">exc</span><span class="p">,</span>
-                            <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                            <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">collapsed</span> <span class="o">=</span> <span class="n">FAST_COLLAPSE_FUNCTION</span><span class="p">(</span><span class="n">cdf_dataset</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">collapsed</span> <span class="o">=</span> <span class="n">FAST_COLLAPSE_FUNCTION</span><span class="p">(</span><span class="n">cdf_dataset</span><span class="p">[</span><span class="s2">"data"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                         <span class="n">finite_positive_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">collapsed</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">collapsed</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
                         <span class="n">counts_per_bin</span> <span class="o">=</span> <span class="n">finite_positive_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">energy_value</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cdf_dataset</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span> <span class="n">counts_per_bin</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">energy_value</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cdf_dataset</span><span class="p">[</span><span class="s2">"energy"</span><span class="p">],</span> <span class="n">counts_per_bin</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
                             <span class="k">if</span> <span class="n">count</span><span class="p">:</span>
                                 <span class="n">energy_counts_map</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">energy_value</span><span class="p">)]</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
                         <span class="n">positive_values</span> <span class="o">=</span> <span class="n">collapsed</span><span class="p">[</span><span class="n">finite_positive_mask</span><span class="p">]</span>
@@ -309,7 +309,7 @@
                         <span class="n">counts_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">energy_counts_map</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">sorted_energies</span><span class="p">])</span>
                         <span class="n">cumulative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">counts_arr</span><span class="p">)</span>
                         <span class="n">target</span> <span class="o">=</span> <span class="mf">0.99</span> <span class="o">*</span> <span class="n">cumulative</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                        <span class="n">idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cumulative</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_energies</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                        <span class="n">idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cumulative</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_energies</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
                         <span class="n">candidate_energy_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sorted_energies</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
 
                     <span class="n">candidate_intensity_max</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -319,8 +319,8 @@
                         <span class="k">if</span> <span class="n">finite_pos</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
                             <span class="n">candidate_intensity_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">finite_pos</span><span class="p">,</span> <span class="n">max_percentile</span><span class="p">))</span>
 
-                    <span class="n">prev_e</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max&quot;</span><span class="p">)</span>
-                    <span class="n">prev_z</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max&quot;</span><span class="p">)</span>
+                    <span class="n">prev_e</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max"</span><span class="p">)</span>
+                    <span class="n">prev_z</span> <span class="o">=</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max"</span><span class="p">)</span>
                     <span class="n">merged_e</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">prev_e</span><span class="p">),</span> <span class="n">candidate_energy_max</span><span class="p">)</span>
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prev_e</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
@@ -343,39 +343,39 @@
                         <span class="n">energy_min_store</span> <span class="o">=</span> <span class="mi">0</span>
                         <span class="n">intensity_min_store</span> <span class="o">=</span> <span class="mi">0</span>
 
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">energy_min_store</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_e</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">intensity_min_store</span>
-                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_z</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">energy_min_store</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_e</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">intensity_min_store</span>
+                    <span class="n">extrema_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_z</span>
                     <span class="n">extrema_state</span><span class="p">[</span><span class="n">progress_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s2">&quot;processed_index&quot;</span><span class="p">:</span> <span class="n">orbit_index</span><span class="p">,</span>
-                        <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="n">total_files_per_instrument</span><span class="p">[</span><span class="n">instrument_name</span><span class="p">],</span>
-                        <span class="s2">&quot;complete&quot;</span><span class="p">:</span> <span class="n">orbit_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="n">total_files_per_instrument</span><span class="p">[</span><span class="n">instrument_name</span><span class="p">],</span>
+                        <span class="s2">"processed_index"</span><span class="p">:</span> <span class="n">orbit_index</span><span class="p">,</span>
+                        <span class="s2">"total"</span><span class="p">:</span> <span class="n">total_files_per_instrument</span><span class="p">[</span><span class="n">instrument_name</span><span class="p">],</span>
+                        <span class="s2">"complete"</span><span class="p">:</span> <span class="n">orbit_index</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="n">total_files_per_instrument</span><span class="p">[</span><span class="n">instrument_name</span><span class="p">],</span>
                     <span class="p">}</span>
                     <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="n">instrument_order</span><span class="p">:</span>
-                        <span class="n">extrema_state</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="n">extrema_state</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">y_scale</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">z_scale</span><span class="si">}</span><span class="s2">_last_orbit"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                     <span class="n">extrema_state</span><span class="p">[</span><span class="n">last_orbit_global_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">orbit_number</span>
 
                     <span class="n">extrema_progress_bar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">inst</span><span class="o">=</span><span class="n">instrument_name</span><span class="p">,</span> <span class="n">orbit</span><span class="o">=</span><span class="n">orbit_number</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                     <span class="n">log_exception</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;[EXTREMA] Update failure inst=</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2"> orbit=</span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">"[EXTREMA] Update failure inst=</span><span class="si">{</span><span class="n">instrument_name</span><span class="si">}</span><span class="s2"> orbit=</span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                         <span class="n">exc</span><span class="p">,</span>
-                        <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                        <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">,</span>
                     <span class="p">)</span>
 
                 <span class="n">orbits_since_last_flush</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">if</span> <span class="n">orbits_since_last_flush</span> <span class="o">&gt;=</span> <span class="n">flush_batch_size</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
+                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
                             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">,</span> <span class="n">file_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
                         <span class="n">orbits_since_last_flush</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                         <span class="n">log_exception</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;[EXTREMA] Batched flush failure after orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="sa">f</span><span class="s2">"[EXTREMA] Batched flush failure after orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                             <span class="n">exc</span><span class="p">,</span>
-                            <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                            <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">,</span>
                         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">orbits_since_last_flush</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -383,13 +383,13 @@
                 <span class="k">if</span> <span class="n">last_orbit_global_key</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="p">:</span>
                     <span class="n">ordered</span> <span class="o">=</span> <span class="p">{</span><span class="n">last_orbit_global_key</span><span class="p">:</span> <span class="n">extrema_state</span><span class="p">[</span><span class="n">last_orbit_global_key</span><span class="p">]}</span>
                     <span class="n">ordered</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">extrema_state</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">last_orbit_global_key</span><span class="p">})</span>
-                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
                         <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">ordered</span><span class="p">,</span> <span class="n">file_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extrema_json_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_out</span><span class="p">:</span>
                         <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">extrema_state</span><span class="p">,</span> <span class="n">file_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-                <span class="n">log_exception</span><span class="p">(</span><span class="s2">&quot;[EXTREMA] Final batched flush failure&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+                <span class="n">log_exception</span><span class="p">(</span><span class="s2">"[EXTREMA] Final batched flush failure"</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">)</span>
 
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">extrema_progress_bar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>

@@ -285,10 +285,10 @@ or <code class="docutils literal notranslate"><span class="pre">None</span></cod
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_cdf_file_type</span><span class="p">(</span><span class="s2">&quot;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&quot;</span><span class="p">)</span>
-<span class="go">&#39;eeb&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">get_cdf_file_type</span><span class="p">(</span><span class="s2">&quot;fa_k0_orb_13312_v01.cdf&quot;</span><span class="p">)</span>
-<span class="go">&#39;orb&#39;</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_cdf_file_type</span><span class="p">(</span><span class="s2">"fa_esa_l2_eeb_20000101001737_13312_v02.cdf"</span><span class="p">)</span>
+<span class="go">'eeb'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_cdf_file_type</span><span class="p">(</span><span class="s2">"fa_k0_orb_13312_v01.cdf"</span><span class="p">)</span>
+<span class="go">'orb'</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -341,11 +341,11 @@ inputs are missing.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">orbits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;orbit&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">42</span><span class="p">],</span> <span class="s2">&quot;ees min index&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ees max index&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">orbits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"orbit"</span><span class="p">:</span> <span class="p">[</span><span class="mi">42</span><span class="p">],</span> <span class="s2">"ees min index"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">"ees max index"</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">]})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">,</span> <span class="mf">300.0</span><span class="p">,</span> <span class="mf">400.0</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="s2">"ees"</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
 <span class="go">[200.0, 400.0]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="s2">"ees"</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
 <span class="go">[]</span>
 </pre></div>
 </div>
@@ -788,9 +788,9 @@ cannot be parsed, or the instrument type is <code class="docutils literal notran
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">extract_orbit_and_instrument</span><span class="p">(</span><span class="s2">&quot;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&quot;</span><span class="p">)</span>
-<span class="go">(13312, &#39;eeb&#39;, &#39;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&#39;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">extract_orbit_and_instrument</span><span class="p">(</span><span class="s2">&quot;fa_k0_orb_13312_v01.cdf&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">extract_orbit_and_instrument</span><span class="p">(</span><span class="s2">"fa_esa_l2_eeb_20000101001737_13312_v02.cdf"</span><span class="p">)</span>
+<span class="go">(13312, 'eeb', 'fa_esa_l2_eeb_20000101001737_13312_v02.cdf')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">extract_orbit_and_instrument</span><span class="p">(</span><span class="s2">"fa_k0_orb_13312_v01.cdf"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
 <span class="go">True</span>
 </pre></div>
 </div>
@@ -817,9 +817,9 @@ axis limits look consistent (e.g. 1234 -&gt; 1300 for ‘up’).</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="s1">&#39;up&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="s1">'up'</span><span class="p">)</span>
 <span class="go">1300.0</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mf">0.0123</span><span class="p">,</span> <span class="s1">&#39;down&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mf">0.0123</span><span class="p">,</span> <span class="s1">'down'</span><span class="p">)</span>
 <span class="go">0.012</span>
 </pre></div>
 </div>
@@ -1095,10 +1095,10 @@ or <code class="docutils literal notranslate"><span class="pre">None</span></cod
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_cdf_file_type</span><span class="p">(</span><span class="s2">&quot;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&quot;</span><span class="p">)</span>
-<span class="go">&#39;eeb&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">get_cdf_file_type</span><span class="p">(</span><span class="s2">&quot;fa_k0_orb_13312_v01.cdf&quot;</span><span class="p">)</span>
-<span class="go">&#39;orb&#39;</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_cdf_file_type</span><span class="p">(</span><span class="s2">"fa_esa_l2_eeb_20000101001737_13312_v02.cdf"</span><span class="p">)</span>
+<span class="go">'eeb'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_cdf_file_type</span><span class="p">(</span><span class="s2">"fa_k0_orb_13312_v01.cdf"</span><span class="p">)</span>
+<span class="go">'orb'</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1151,11 +1151,11 @@ inputs are missing.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">orbits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;orbit&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">42</span><span class="p">],</span> <span class="s2">&quot;ees min index&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ees max index&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">orbits</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"orbit"</span><span class="p">:</span> <span class="p">[</span><span class="mi">42</span><span class="p">],</span> <span class="s2">"ees min index"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">"ees max index"</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">]})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">200.0</span><span class="p">,</span> <span class="mf">300.0</span><span class="p">,</span> <span class="mf">400.0</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="s2">"ees"</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
 <span class="go">[200.0, 400.0]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="s2">&quot;ees&quot;</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="s2">"ees"</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
 <span class="go">[]</span>
 </pre></div>
 </div>
@@ -1290,9 +1290,9 @@ axis limits look consistent (e.g. 1234 -&gt; 1300 for ‘up’).</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="s1">&#39;up&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="s1">'up'</span><span class="p">)</span>
 <span class="go">1300.0</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mf">0.0123</span><span class="p">,</span> <span class="s1">&#39;down&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">round_extrema</span><span class="p">(</span><span class="mf">0.0123</span><span class="p">,</span> <span class="s1">'down'</span><span class="p">)</span>
 <span class="go">0.012</span>
 </pre></div>
 </div>
@@ -1713,6 +1713,15 @@ this module, without re-requesting the same month page once per day.</p>
 <dd><p>Earliest and latest calendar days with any FAST ESA CDF coverage on CDA Web.</p>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="configurable_spectrograms.download.MIN_REQUEST_INTERVAL_SECONDS">
+<span class="sig-prename descclassname"><span class="pre">configurable_spectrograms.download.</span></span><span class="sig-name descname"><span class="pre">MIN_REQUEST_INTERVAL_SECONDS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></span><a class="headerlink" href="#configurable_spectrograms.download.MIN_REQUEST_INTERVAL_SECONDS" title="Link to this definition">¶</a></dt>
+<dd><p>Floor on how often any thread may start a new request, tracked via
+<code class="docutils literal notranslate"><span class="pre">_last_request_finished_at</span></code> below – a burst of threads firing the
+instant the pacing window opens is itself enough request rate to draw a
+429, even with no two requests ever truly overlapping.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="configurable_spectrograms.download.download_cdf_files_threaded">
 <span class="sig-prename descclassname"><span class="pre">configurable_spectrograms.download.</span></span><span class="sig-name descname"><span class="pre">download_cdf_files_threaded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">years</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./FAST_data/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instruments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{'eeb',</span> <span class="pre">'ees',</span> <span class="pre">'ieb',</span> <span class="pre">'ies'}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_progress_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flush_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">25</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/configurable_spectrograms/download.html#download_cdf_files_threaded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#configurable_spectrograms.download.download_cdf_files_threaded" title="Link to this definition">¶</a></dt>
@@ -1849,9 +1858,9 @@ cannot be parsed, or the instrument type is <code class="docutils literal notran
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">extract_orbit_and_instrument</span><span class="p">(</span><span class="s2">&quot;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&quot;</span><span class="p">)</span>
-<span class="go">(13312, &#39;eeb&#39;, &#39;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&#39;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">extract_orbit_and_instrument</span><span class="p">(</span><span class="s2">&quot;fa_k0_orb_13312_v01.cdf&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">extract_orbit_and_instrument</span><span class="p">(</span><span class="s2">"fa_esa_l2_eeb_20000101001737_13312_v02.cdf"</span><span class="p">)</span>
+<span class="go">(13312, 'eeb', 'fa_esa_l2_eeb_20000101001737_13312_v02.cdf')</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">extract_orbit_and_instrument</span><span class="p">(</span><span class="s2">"fa_k0_orb_13312_v01.cdf"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
 <span class="go">True</span>
 </pre></div>
 </div>
@@ -1879,9 +1888,9 @@ whose name matches the expected FAST CDF naming pattern, or
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">resolve_orbit_from_files</span><span class="p">({</span><span class="s2">&quot;eeb&quot;</span><span class="p">:</span> <span class="s2">&quot;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&quot;</span><span class="p">})</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">resolve_orbit_from_files</span><span class="p">({</span><span class="s2">"eeb"</span><span class="p">:</span> <span class="s2">"fa_esa_l2_eeb_20000101001737_13312_v02.cdf"</span><span class="p">})</span>
 <span class="go">13312</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">resolve_orbit_from_files</span><span class="p">({</span><span class="s2">&quot;eeb&quot;</span><span class="p">:</span> <span class="s2">&quot;not_a_fast_file.cdf&quot;</span><span class="p">})</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resolve_orbit_from_files</span><span class="p">({</span><span class="s2">"eeb"</span><span class="p">:</span> <span class="s2">"not_a_fast_file.cdf"</span><span class="p">})</span> <span class="ow">is</span> <span class="kc">None</span>
 <span class="go">True</span>
 </pre></div>
 </div>
@@ -1915,12 +1924,12 @@ omitted from the mapping.</p>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">resolve_shared_orbit</span><span class="p">({</span>
-<span class="gp">... </span>    <span class="s2">&quot;eeb&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;fa_esa_l2_eeb_20000101001737_100_v02.cdf&quot;</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="s2">&quot;fa_esa_l2_eeb_20000101031737_101_v02.cdf&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="s2">&quot;ies&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;fa_esa_l2_ies_20000101001738_100_v02.cdf&quot;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="s2">"eeb"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"fa_esa_l2_eeb_20000101001737_100_v02.cdf"</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="s2">"fa_esa_l2_eeb_20000101031737_101_v02.cdf"</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="s2">"ies"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"fa_esa_l2_ies_20000101001738_100_v02.cdf"</span><span class="p">],</span>
 <span class="gp">... </span><span class="p">})</span>
-<span class="go">(100, {&#39;eeb&#39;: &#39;fa_esa_l2_eeb_20000101001737_100_v02.cdf&#39;, &#39;ies&#39;: &#39;fa_esa_l2_ies_20000101001738_100_v02.cdf&#39;})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">resolve_shared_orbit</span><span class="p">({</span><span class="s2">&quot;eeb&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;ies&quot;</span><span class="p">:</span> <span class="p">[]})</span>
+<span class="go">(100, {'eeb': 'fa_esa_l2_eeb_20000101001737_100_v02.cdf', 'ies': 'fa_esa_l2_ies_20000101001738_100_v02.cdf'})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resolve_shared_orbit</span><span class="p">({</span><span class="s2">"eeb"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"ies"</span><span class="p">:</span> <span class="p">[]})</span>
 <span class="go">(None, {})</span>
 </pre></div>
 </div>

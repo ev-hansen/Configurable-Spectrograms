@@ -31,7 +31,7 @@
           <div class="body" role="main">
             
   <h1>Source code for configurable_spectrograms.percentile_utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Axis-extrema rounding and percentile-bound computation for color scales.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Axis-extrema rounding and percentile-bound computation for color scales."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 
@@ -41,16 +41,16 @@
 <div class="viewcode-block" id="round_extrema">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_FAST_spectrograms.round_extrema">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">round_extrema</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Round an extrema value to a clean significant-digit axis limit.</span>
+<span class="w">    </span><span class="sd">"""Round an extrema value to a clean significant-digit axis limit.</span>
 
 <span class="sd">    Rounds to the next significant digit in the specified direction so plot</span>
-<span class="sd">    axis limits look consistent (e.g. 1234 -&gt; 1300 for &#39;up&#39;).</span>
+<span class="sd">    axis limits look consistent (e.g. 1234 -&gt; 1300 for 'up').</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    value : float or int</span>
 <span class="sd">        Extrema value. Zero returns 0.0.</span>
-<span class="sd">    direction : {&#39;up&#39;, &#39;down&#39;}</span>
+<span class="sd">    direction : {'up', 'down'}</span>
 <span class="sd">        Round up (for maxima) or down (for minima).</span>
 
 <span class="sd">    Returns</span>
@@ -60,23 +60,23 @@
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If direction is not ``&#39;up&#39;`` or ``&#39;down&#39;``.</span>
+<span class="sd">        If direction is not ``'up'`` or ``'down'``.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; round_extrema(1234, &#39;up&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; round_extrema(1234, 'up')</span>
 <span class="sd">    1300.0</span>
-<span class="sd">    &gt;&gt;&gt; round_extrema(0.0123, &#39;down&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; round_extrema(0.0123, 'down')</span>
 <span class="sd">    0.012</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="mf">0.0</span>
     <span class="n">factor</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">"up"</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">value</span> <span class="o">/</span> <span class="n">factor</span><span class="p">)</span> <span class="o">*</span> <span class="n">factor</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;down&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">"down"</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">value</span> <span class="o">/</span> <span class="n">factor</span><span class="p">)</span> <span class="o">*</span> <span class="n">factor</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid direction: </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid direction: </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
@@ -89,12 +89,12 @@
     <span class="n">z_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">z_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return ``(z_min, z_max)`` color-scale bounds for a data matrix.</span>
+<span class="w">    </span><span class="sd">"""Return ``(z_min, z_max)`` color-scale bounds for a data matrix.</span>
 
 <span class="sd">    Explicit ``z_min``/``z_max`` values are used as-is when given; otherwise</span>
 <span class="sd">    each bound is computed independently via ``numpy.nanpercentile``. This</span>
 <span class="sd">    unifies the vmin/vmax percentile logic that plotting functions need when</span>
-<span class="sd">    the caller hasn&#39;t supplied fixed bounds.</span>
+<span class="sd">    the caller hasn't supplied fixed bounds.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -121,7 +121,7 @@
 <span class="sd">    (1.0, 100.0)</span>
 <span class="sd">    &gt;&gt;&gt; compute_percentile_bounds(np.array([1.0, 2.0, 3.0]), z_min=-5.0, z_max=5.0)</span>
 <span class="sd">    (-5.0, 5.0)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">resolved_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_min</span><span class="p">)</span> <span class="k">if</span> <span class="n">z_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">low_percentile</span><span class="p">))</span>
     <span class="n">resolved_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_max</span><span class="p">)</span> <span class="k">if</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanpercentile</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">high_percentile</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">resolved_min</span><span class="p">,</span> <span class="n">resolved_max</span></div>

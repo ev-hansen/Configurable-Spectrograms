@@ -31,7 +31,7 @@
           <div class="body" role="main">
             
   <h1>Source code for configurable_spectrograms.batch_runner</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Executor-agnostic batch execution with resumable progress tracking.</span>
+<span></span><span class="sd">"""Executor-agnostic batch execution with resumable progress tracking.</span>
 
 <span class="sd">:func:`run_batch` is the shared scaffolding (progress-JSON load/merge/flush,</span>
 <span class="sd">buffered-log flush cadence, ``as_completed`` loop, SIGINT handling) used by</span>
@@ -42,7 +42,7 @@
 <span class="sd">which supplies a ``ThreadPoolExecutor`` factory). Callers choose the</span>
 <span class="sd">concurrency primitive that matches their workload; this module only</span>
 <span class="sd">provides the orchestration around whichever executor they hand it.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">concurrent.futures</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
@@ -54,11 +54,12 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.logging_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_log_batch</span><span class="p">,</span> <span class="n">flush_log_buffer</span><span class="p">,</span> <span class="n">log_error</span><span class="p">,</span> <span class="n">log_message</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.process_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">terminate_all_child_processes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.text_tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_aligned_table</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_sigint_handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SIGINT handler that terminates children and exits promptly.&quot;&quot;&quot;</span>
-    <span class="n">log_message</span><span class="p">(</span><span class="s2">&quot;[INFO] SIGINT received. Terminating all child processes and exiting.&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""SIGINT handler that terminates children and exits promptly."""</span>
+    <span class="n">log_message</span><span class="p">(</span><span class="s2">"[INFO] SIGINT received. Terminating all child processes and exiting."</span><span class="p">)</span>
     <span class="n">terminate_all_child_processes</span><span class="p">()</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
@@ -75,7 +76,7 @@
     <span class="n">log_flush_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">install_signal_handlers</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run ``worker_fn`` over ``items`` in parallel with resumable progress tracking.</span>
+<span class="w">    </span><span class="sd">"""Run ``worker_fn`` over ``items`` in parallel with resumable progress tracking.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -83,8 +84,8 @@
 <span class="sd">        Iterable of item identifiers (any ``repr``-able objects).</span>
 <span class="sd">    worker_fn : callable</span>
 <span class="sd">        Callable taking one item and returning ``(item, status)``, where</span>
-<span class="sd">        ``status`` is a short label such as ``&#39;ok&#39;``, ``&#39;no_data&#39;``, or</span>
-<span class="sd">        ``&#39;error&#39;``.</span>
+<span class="sd">        ``status`` is a short label such as ``'ok'``, ``'no_data'``, or</span>
+<span class="sd">        ``'error'``.</span>
 <span class="sd">    executor_factory : callable</span>
 <span class="sd">        Zero-argument callable returning a fresh</span>
 <span class="sd">        ``concurrent.futures.Executor`` to use as a context manager (e.g.</span>
@@ -114,26 +115,26 @@
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    Items are identified via ``repr(item)`` for data-agnostic progress</span>
-<span class="sd">    persistence, matching the pattern used across this codebase&#39;s batch</span>
+<span class="sd">    persistence, matching the pattern used across this codebase's batch</span>
 <span class="sd">    drivers.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">previous_sigint</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">install_signal_handlers</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">previous_sigint</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">getsignal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">)</span>
             <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">_sigint_handler</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">sig_setup_exc</span><span class="p">:</span>
-            <span class="n">log_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[WARN] Could not install temporary SIGINT handler: </span><span class="si">{</span><span class="n">sig_setup_exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[WARN] Could not install temporary SIGINT handler: </span><span class="si">{</span><span class="n">sig_setup_exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">flush_batch_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">flush_batch_size</span><span class="p">))</span>
     <span class="n">configure_log_batch</span><span class="p">(</span><span class="n">log_flush_batch_size</span> <span class="ow">or</span> <span class="n">flush_batch_size</span><span class="p">)</span>
 
     <span class="n">progress_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;completed_items&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;no_data&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;last_index&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-        <span class="s2">&quot;schema_version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"completed_items"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"errors"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"no_data"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"last_index"</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"schema_version"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">progress_json_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ignore_progress_json</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
@@ -144,14 +145,14 @@
                     <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">loaded</span><span class="p">:</span>
                         <span class="n">progress_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">progress_read_exc</span><span class="p">:</span>
-            <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[PROGRESS] Failed to read existing progress JSON &#39;</span><span class="si">{</span><span class="n">progress_json_path</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">progress_read_exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[PROGRESS] Failed to read existing progress JSON '</span><span class="si">{</span><span class="n">progress_json_path</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">progress_read_exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">item_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
-    <span class="n">completed_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">progress_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;completed_items&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+    <span class="n">completed_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">progress_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"completed_items"</span><span class="p">,</span> <span class="p">[]))</span>
     <span class="n">pending_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">item_list</span> <span class="k">if</span> <span class="nb">repr</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">completed_set</span><span class="p">]</span>
     <span class="n">log_message</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;[BATCH] Starting batch run with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pending_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> pending / </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">item_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> total items; &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;flush_batch_size=</span><span class="si">{</span><span class="n">flush_batch_size</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"[BATCH] Starting batch run with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pending_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> pending / </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">item_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> total items; "</span>
+        <span class="sa">f</span><span class="s2">"flush_batch_size=</span><span class="si">{</span><span class="n">flush_batch_size</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
     <span class="n">pending_progress_write_count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -165,11 +166,11 @@
         <span class="k">if</span> <span class="n">pending_progress_write_count</span> <span class="o">&lt;</span> <span class="n">flush_batch_size</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">progress_out</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">progress_json_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">progress_out</span><span class="p">:</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">progress_state</span><span class="p">,</span> <span class="n">progress_out</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">pending_progress_write_count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">progress_write_exc</span><span class="p">:</span>
-            <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[PROGRESS] Failed writing progress JSON &#39;</span><span class="si">{</span><span class="n">progress_json_path</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">progress_write_exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[PROGRESS] Failed writing progress JSON '</span><span class="si">{</span><span class="n">progress_json_path</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">progress_write_exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">processed_item_count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -180,36 +181,36 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">item_identifier</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="n">finished_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">batch_future_exc</span><span class="p">:</span>
-                <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s2">"error"</span>
                 <span class="n">item_identifier</span> <span class="o">=</span> <span class="n">original_item</span>
-                <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[BATCH-FAIL] Item </span><span class="si">{</span><span class="n">original_item</span><span class="si">}</span><span class="s2"> outer exception: </span><span class="si">{</span><span class="n">batch_future_exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[BATCH-FAIL] Item </span><span class="si">{</span><span class="n">original_item</span><span class="si">}</span><span class="s2"> outer exception: </span><span class="si">{</span><span class="n">batch_future_exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">item_identifier</span><span class="p">,</span> <span class="n">status</span><span class="p">))</span>
             <span class="n">item_repr</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">item_identifier</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;ok&quot;</span><span class="p">:</span>
-                <span class="n">progress_state</span><span class="p">[</span><span class="s2">&quot;completed_items&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_repr</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;no_data&quot;</span><span class="p">:</span>
-                <span class="n">progress_state</span><span class="p">[</span><span class="s2">&quot;no_data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_repr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">"ok"</span><span class="p">:</span>
+                <span class="n">progress_state</span><span class="p">[</span><span class="s2">"completed_items"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_repr</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">"no_data"</span><span class="p">:</span>
+                <span class="n">progress_state</span><span class="p">[</span><span class="s2">"no_data"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_repr</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">progress_state</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_repr</span><span class="p">)</span>
+                <span class="n">progress_state</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_repr</span><span class="p">)</span>
             <span class="n">processed_item_count</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">progress_state</span><span class="p">[</span><span class="s2">&quot;last_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">processed_item_count</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">progress_state</span><span class="p">[</span><span class="s2">"last_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">processed_item_count</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="n">pending_progress_write_count</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">_flush_progress</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="n">_flush_progress</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">flush_log_buffer</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">log_message</span><span class="p">(</span>
-        <span class="s2">&quot;[BATCH] Completed batch run: &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">processed_item_count</span><span class="si">}</span><span class="s2"> processed (ok=</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">_</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;ok&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;no_data=</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">_</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;no_data&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;error=</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">_</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
-        <span class="n">force_flush</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">status_counts</span> <span class="o">=</span> <span class="p">{</span><span class="n">status</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="n">status</span><span class="p">)</span> <span class="k">for</span> <span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"ok"</span><span class="p">,</span> <span class="s2">"no_data"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">)}</span>
+    <span class="n">summary_table</span> <span class="o">=</span> <span class="n">format_aligned_table</span><span class="p">(</span>
+        <span class="n">header</span><span class="o">=</span><span class="p">[</span><span class="s2">"Status"</span><span class="p">,</span> <span class="s2">"Count"</span><span class="p">],</span>
+        <span class="n">rows</span><span class="o">=</span><span class="p">[[</span><span class="n">status</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span> <span class="k">for</span> <span class="n">status</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">status_counts</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span> <span class="o">+</span> <span class="p">[[</span><span class="s2">"total"</span><span class="p">,</span> <span class="n">processed_item_count</span><span class="p">]],</span>
+        <span class="n">blank_line_before_last_row</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">log_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[BATCH] Completed batch run:</span><span class="se">\n</span><span class="si">{</span><span class="n">summary_table</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">force_flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">install_signal_handlers</span> <span class="ow">and</span> <span class="n">previous_sigint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">previous_sigint</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">sig_restore_exc</span><span class="p">:</span>
-            <span class="n">log_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[WARN] Could not restore original SIGINT handler: </span><span class="si">{</span><span class="n">sig_restore_exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log_message</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[WARN] Could not restore original SIGINT handler: </span><span class="si">{</span><span class="n">sig_restore_exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">results</span></div>
 
 </pre></div>

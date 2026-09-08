@@ -31,15 +31,15 @@
           <div class="body" role="main">
             
   <h1>Source code for configurable_spectrograms.process_utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Process-tree management helpers used during batch shutdown handling.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Process-tree management helpers used during batch shutdown handling."""</span>
 
 
 <div class="viewcode-block" id="terminate_all_child_processes">
 <a class="viewcode-back" href="../../modules.html#configurable_spectrograms.process_utils.terminate_all_child_processes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">terminate_all_child_processes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Best-effort terminate all child processes of the current process.</span>
+<span class="w">    </span><span class="sd">"""Best-effort terminate all child processes of the current process.</span>
 
-<span class="sd">    Uses :mod:`psutil` (imported lazily, since it&#39;s only needed during</span>
+<span class="sd">    Uses :mod:`psutil` (imported lazily, since it's only needed during</span>
 <span class="sd">    shutdown) to enumerate child processes recursively and invoke</span>
 <span class="sd">    ``terminate()`` on each. Exceptions are suppressed throughout because</span>
 <span class="sd">    this function is used during best-effort shutdown handling where a</span>
@@ -48,7 +48,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>

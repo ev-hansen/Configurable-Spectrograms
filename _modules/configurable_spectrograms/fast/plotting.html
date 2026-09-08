@@ -31,13 +31,13 @@
           <div class="body" role="main">
             
   <h1>Source code for configurable_spectrograms.fast.plotting</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Single-output FAST ESA spectrogram rendering.</span>
+<span></span><span class="sd">"""Single-output FAST ESA spectrogram rendering.</span>
 
 <span class="sd">Both functions here render one figure for a single CDF file or a single</span>
-<span class="sd">orbit&#39;s worth of instrument files. Batch callers</span>
+<span class="sd">orbit's worth of instrument files. Batch callers</span>
 <span class="sd">(:mod:`configurable_spectrograms.fast.process_orbit`) call these same</span>
 <span class="sd">functions once per orbit rather than duplicating the rendering logic.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
@@ -57,10 +57,10 @@
 <span class="c1"># iteration order so callers passing a custom `pitch_angle_categories`</span>
 <span class="c1"># mapping still get a stable row layout for the four standard categories.</span>
 <span class="n">_PITCH_ANGLE_ROW_KEYS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;all</span><span class="se">\n</span><span class="s2">(0, 360)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;downgoing</span><span class="se">\n</span><span class="s2">(0, 30), (330, 360)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;upgoing</span><span class="se">\n</span><span class="s2">(150, 210)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;perpendicular</span><span class="se">\n</span><span class="s2">(40, 140), (210, 330)&quot;</span><span class="p">,</span>
+    <span class="s2">"all</span><span class="se">\n</span><span class="s2">(0, 360)"</span><span class="p">,</span>
+    <span class="s2">"downgoing</span><span class="se">\n</span><span class="s2">(0, 30), (330, 360)"</span><span class="p">,</span>
+    <span class="s2">"upgoing</span><span class="se">\n</span><span class="s2">(150, 210)"</span><span class="p">,</span>
+    <span class="s2">"perpendicular</span><span class="se">\n</span><span class="s2">(40, 140), (210, 330)"</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -71,19 +71,19 @@
     <span class="n">filtered_orbits_df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">orbit_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">zoom_duration_minutes</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">6.25</span><span class="p">,</span>
-    <span class="n">scale_function_y</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-    <span class="n">scale_function_z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">scale_function_y</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"linear"</span><span class="p">,</span>
+    <span class="n">scale_function_z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"linear"</span><span class="p">,</span>
     <span class="n">pitch_angle_categories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+    <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"viridis"</span><span class="p">,</span>
     <span class="n">y_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">y_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">z_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">z_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"both"</span><span class="p">,</span>
     <span class="n">cusp_marker_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot a grid of ESA spectrograms collapsed by pitch-angle categories.</span>
+<span class="w">    </span><span class="sd">"""Plot a grid of ESA spectrograms collapsed by pitch-angle categories.</span>
 
 <span class="sd">    Each row corresponds to a pitch-angle category (e.g. downgoing, upgoing,</span>
 <span class="sd">    perpendicular, all). If orbit boundary timestamps are available a zoom</span>
@@ -100,23 +100,23 @@
 <span class="sd">        Orbit number used to label vertical lines.</span>
 <span class="sd">    zoom_duration_minutes : float, default 6.25</span>
 <span class="sd">        Window length (minutes) for the optional zoom column.</span>
-<span class="sd">    scale_function_y : {&#39;linear&#39;, &#39;log&#39;}, default &#39;linear&#39;</span>
+<span class="sd">    scale_function_y : {'linear', 'log'}, default 'linear'</span>
 <span class="sd">        Y-axis scaling.</span>
-<span class="sd">    scale_function_z : {&#39;linear&#39;, &#39;log&#39;}, default &#39;linear&#39;</span>
+<span class="sd">    scale_function_z : {'linear', 'log'}, default 'linear'</span>
 <span class="sd">        Color scale for intensity.</span>
 <span class="sd">    pitch_angle_categories : dict or None</span>
 <span class="sd">        Mapping of label -&gt; list of (min_deg, max_deg) ranges; defaults to</span>
 <span class="sd">        the four standard groups when None.</span>
 <span class="sd">    show : bool, default True</span>
 <span class="sd">        If True, display the figure interactively.</span>
-<span class="sd">    colormap : str, default &#39;viridis&#39;</span>
+<span class="sd">    colormap : str, default 'viridis'</span>
 <span class="sd">        Matplotlib colormap name.</span>
 <span class="sd">    y_min, y_max : float or None, optional</span>
 <span class="sd">        Energy (y-axis) limits; defaults to [0, 4000] when None.</span>
 <span class="sd">    z_min, z_max : float or None, optional</span>
 <span class="sd">        Color scale limits; defaults to row-level 1st/99th percentiles when</span>
 <span class="sd">        None.</span>
-<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;, &#39;both&#39;}, default &#39;both&#39;</span>
+<span class="sd">    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'</span>
 <span class="sd">        Cusp-boundary marker style; see</span>
 <span class="sd">        :mod:`configurable_spectrograms.cusp_marking`.</span>
 <span class="sd">    cusp_marker_kwargs : dict or None, optional</span>
@@ -126,17 +126,17 @@
 <span class="sd">    -------</span>
 <span class="sd">    tuple[Figure or None, FigureCanvasBase or None]</span>
 <span class="sd">        Figure and Canvas, or ``(None, None)`` when no datasets are produced.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO: record orbits when error contains &quot;is not a CDF file or a non-supported CDF!&quot; in json log file</span>
+<span class="sd">    """</span>
+    <span class="c1"># TODO: record orbits when error contains "is not a CDF file or a non-supported CDF!" in json log file</span>
     <span class="k">if</span> <span class="n">pitch_angle_categories</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">pitch_angle_categories</span> <span class="o">=</span> <span class="n">DEFAULT_PITCH_ANGLE_CATEGORIES</span>
     <span class="n">instrument_type</span> <span class="o">=</span> <span class="n">get_cdf_file_type</span><span class="p">(</span><span class="n">cdf_file_path</span><span class="p">)</span>
     <span class="n">dataset</span> <span class="o">=</span> <span class="n">load_fast_cdf_dataset</span><span class="p">(</span><span class="n">cdf_file_path</span><span class="p">)</span>
     <span class="n">times</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">pitchangle</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span>
-        <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
-        <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">],</span>
-        <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;pitch_angle&quot;</span><span class="p">],</span>
+        <span class="n">dataset</span><span class="p">[</span><span class="s2">"times"</span><span class="p">],</span>
+        <span class="n">dataset</span><span class="p">[</span><span class="s2">"data"</span><span class="p">],</span>
+        <span class="n">dataset</span><span class="p">[</span><span class="s2">"energy"</span><span class="p">],</span>
+        <span class="n">dataset</span><span class="p">[</span><span class="s2">"pitch_angle"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">vertical_lines</span> <span class="o">=</span> <span class="kc">None</span>
@@ -144,8 +144,8 @@
         <span class="n">vertical_lines</span> <span class="o">=</span> <span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">filtered_orbits_df</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">,</span> <span class="n">instrument_type</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">vertical_lines</span><span class="p">:</span>
             <span class="n">log_exception</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;No vertical lines found for orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">cdf_file_path</span><span class="si">}</span><span class="s2">. Skipping.&quot;</span><span class="p">,</span>
-                <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"No vertical lines found for orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">cdf_file_path</span><span class="si">}</span><span class="s2">. Skipping."</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">,</span>
             <span class="p">)</span>
 
     <span class="n">y_lower</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y_min</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">y_min</span>
@@ -169,26 +169,26 @@
         <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">compute_percentile_bounds</span><span class="p">(</span><span class="n">matrix_full_plot</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="n">z_min</span><span class="p">,</span> <span class="n">z_max</span><span class="p">)</span>
         <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span>
-                <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span>
-                <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">pa_data</span><span class="p">,</span>
-                <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">key</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
-                <span class="s2">&quot;y_label&quot;</span><span class="p">:</span> <span class="s2">&quot;Energy (eV)&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;z_label&quot;</span><span class="p">:</span> <span class="s2">&quot;Counts&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;vmin&quot;</span><span class="p">:</span> <span class="n">vmin</span><span class="p">,</span>
-                <span class="s2">&quot;vmax&quot;</span><span class="p">:</span> <span class="n">vmax</span><span class="p">,</span>
-                <span class="s2">&quot;y_min&quot;</span><span class="p">:</span> <span class="n">y_lower</span><span class="p">,</span>
-                <span class="s2">&quot;y_max&quot;</span><span class="p">:</span> <span class="n">y_upper</span><span class="p">,</span>
-                <span class="o">**</span><span class="p">({</span><span class="s2">&quot;z_min&quot;</span><span class="p">:</span> <span class="n">z_min</span><span class="p">}</span> <span class="k">if</span> <span class="n">z_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
-                <span class="o">**</span><span class="p">({</span><span class="s2">&quot;z_max&quot;</span><span class="p">:</span> <span class="n">z_max</span><span class="p">}</span> <span class="k">if</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
+                <span class="s2">"x"</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span>
+                <span class="s2">"y"</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span>
+                <span class="s2">"data"</span><span class="p">:</span> <span class="n">pa_data</span><span class="p">,</span>
+                <span class="s2">"label"</span><span class="p">:</span> <span class="n">key</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
+                <span class="s2">"y_label"</span><span class="p">:</span> <span class="s2">"Energy (eV)"</span><span class="p">,</span>
+                <span class="s2">"z_label"</span><span class="p">:</span> <span class="s2">"Counts"</span><span class="p">,</span>
+                <span class="s2">"vmin"</span><span class="p">:</span> <span class="n">vmin</span><span class="p">,</span>
+                <span class="s2">"vmax"</span><span class="p">:</span> <span class="n">vmax</span><span class="p">,</span>
+                <span class="s2">"y_min"</span><span class="p">:</span> <span class="n">y_lower</span><span class="p">,</span>
+                <span class="s2">"y_max"</span><span class="p">:</span> <span class="n">y_upper</span><span class="p">,</span>
+                <span class="o">**</span><span class="p">({</span><span class="s2">"z_min"</span><span class="p">:</span> <span class="n">z_min</span><span class="p">}</span> <span class="k">if</span> <span class="n">z_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
+                <span class="o">**</span><span class="p">({</span><span class="s2">"z_max"</span><span class="p">:</span> <span class="n">z_max</span><span class="p">}</span> <span class="k">if</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">datasets</span><span class="p">:</span>
-        <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[WARNING] No pitch angle datasets to plot for </span><span class="si">{</span><span class="n">cdf_file_path</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+        <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[WARNING] No pitch angle datasets to plot for </span><span class="si">{</span><span class="n">cdf_file_path</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
-    <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> - Pitch Angle </span><span class="si">{</span><span class="n">instrument_type</span><span class="si">}</span><span class="s2"> ESA Spectrograms&quot;</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> - Pitch Angle </span><span class="si">{</span><span class="n">instrument_type</span><span class="si">}</span><span class="s2"> ESA Spectrograms"</span>
     <span class="k">return</span> <span class="n">generic_plot_multirow_optional_zoom</span><span class="p">(</span>
         <span class="n">datasets</span><span class="p">,</span>
         <span class="n">vertical_lines</span><span class="o">=</span><span class="n">vertical_lines</span><span class="p">,</span>
@@ -217,20 +217,20 @@
     <span class="n">filtered_orbits_df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">orbit_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">zoom_duration_minutes</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">6.25</span><span class="p">,</span>
-    <span class="n">scale_function_y</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-    <span class="n">scale_function_z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">scale_function_y</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"linear"</span><span class="p">,</span>
+    <span class="n">scale_function_z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"linear"</span><span class="p">,</span>
     <span class="n">instrument_order</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_INSTRUMENT_ORDER</span><span class="p">,</span>
     <span class="n">show</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+    <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"viridis"</span><span class="p">,</span>
     <span class="n">y_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">y_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">z_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">z_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">global_extrema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span>
+    <span class="n">cusp_marker_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"both"</span><span class="p">,</span>
     <span class="n">cusp_marker_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot a multi-instrument ESA spectrogram grid for a single orbit.</span>
+<span class="w">    </span><span class="sd">"""Plot a multi-instrument ESA spectrogram grid for a single orbit.</span>
 
 <span class="sd">    Loads each instrument CDF, collapses across pitch-angle, and constructs</span>
 <span class="sd">    datasets for ``generic_plot_multirow_optional_zoom``. A zoom column is</span>
@@ -239,23 +239,23 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    cdf_file_paths : dict of {str: str}</span>
-<span class="sd">        Mapping of instrument key (``&#39;ees&#39;``, ``&#39;eeb&#39;``, ``&#39;ies&#39;``,</span>
-<span class="sd">        ``&#39;ieb&#39;``) to CDF file path. Missing instruments are skipped.</span>
+<span class="sd">        Mapping of instrument key (``'ees'``, ``'eeb'``, ``'ies'``,</span>
+<span class="sd">        ``'ieb'``) to CDF file path. Missing instruments are skipped.</span>
 <span class="sd">    filtered_orbits_df : pandas.DataFrame or None</span>
 <span class="sd">        DataFrame for vertical line computation; None omits lines.</span>
 <span class="sd">    orbit_number : int or None</span>
 <span class="sd">        Orbit identifier used in titles and vertical lines.</span>
 <span class="sd">    zoom_duration_minutes : float, default 6.25</span>
 <span class="sd">        Zoom window length (minutes).</span>
-<span class="sd">    scale_function_y : {&#39;linear&#39;, &#39;log&#39;}, default &#39;linear&#39;</span>
+<span class="sd">    scale_function_y : {'linear', 'log'}, default 'linear'</span>
 <span class="sd">        Y-axis scaling.</span>
-<span class="sd">    scale_function_z : {&#39;linear&#39;, &#39;log&#39;}, default &#39;linear&#39;</span>
+<span class="sd">    scale_function_z : {'linear', 'log'}, default 'linear'</span>
 <span class="sd">        Color scale for intensity.</span>
 <span class="sd">    instrument_order : tuple of str, default DEFAULT_INSTRUMENT_ORDER</span>
 <span class="sd">        Display order of instrument rows.</span>
 <span class="sd">    show : bool, default True</span>
 <span class="sd">        Whether to show the figure interactively.</span>
-<span class="sd">    colormap : str, default &#39;viridis&#39;</span>
+<span class="sd">    colormap : str, default 'viridis'</span>
 <span class="sd">        Matplotlib colormap name.</span>
 <span class="sd">    y_min, y_max, z_min, z_max : float or None, optional</span>
 <span class="sd">        Global fallback axis/color limits used when ``global_extrema`` does</span>
@@ -265,7 +265,7 @@
 <span class="sd">        ``{instrument}_{y_scale}_{z_scale}_{axis}_{min|max}`` supplying</span>
 <span class="sd">        per-instrument limits. Takes precedence over the direct ``y_min`` /</span>
 <span class="sd">        ``y_max`` / ``z_min`` / ``z_max`` arguments.</span>
-<span class="sd">    cusp_marker_style : {&#39;line&#39;, &#39;bracket&#39;, &#39;both&#39;}, default &#39;both&#39;</span>
+<span class="sd">    cusp_marker_style : {'line', 'bracket', 'both'}, default 'both'</span>
 <span class="sd">        Cusp-boundary marker style; see</span>
 <span class="sd">        :mod:`configurable_spectrograms.cusp_marking`.</span>
 <span class="sd">    cusp_marker_kwargs : dict or None, optional</span>
@@ -282,7 +282,7 @@
 <span class="sd">    - Energy bins are restricted to ``[0, 4000]`` unless overridden.</span>
 <span class="sd">    - ``vmin``/``vmax`` per row use 1st/99th percentiles unless</span>
 <span class="sd">      ``global_extrema`` provides per-instrument ``z_min`` / ``z_max``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">vertical_lines</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="n">instrument_order</span><span class="p">:</span>
@@ -291,23 +291,23 @@
             <span class="k">continue</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">dataset</span> <span class="o">=</span> <span class="n">load_fast_cdf_dataset</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span>
-            <span class="n">times</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;times&quot;</span><span class="p">],</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">]</span>
+            <span class="n">times</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">"times"</span><span class="p">],</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">"data"</span><span class="p">],</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">"energy"</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">vertical_lines</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">filtered_orbits_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">orbit_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">instrument_type</span> <span class="o">=</span> <span class="n">get_cdf_file_type</span><span class="p">(</span><span class="n">cdf_path</span><span class="p">)</span>
                 <span class="n">vertical_lines</span> <span class="o">=</span> <span class="n">get_timestamps_for_orbit</span><span class="p">(</span><span class="n">filtered_orbits_df</span><span class="p">,</span> <span class="n">orbit_number</span><span class="p">,</span> <span class="n">instrument_type</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">vertical_lines</span><span class="p">:</span>
                     <span class="n">log_exception</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;No vertical lines found for orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">cdf_path</span><span class="si">}</span><span class="s2">. Skipping.&quot;</span><span class="p">,</span>
-                        <span class="n">level</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                        <span class="sa">f</span><span class="s2">"No vertical lines found for orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">cdf_path</span><span class="si">}</span><span class="s2">. Skipping."</span><span class="p">,</span>
+                        <span class="n">level</span><span class="o">=</span><span class="s2">"message"</span><span class="p">,</span>
                     <span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">global_extrema</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="n">key_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">scale_function_y</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">scale_function_z</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="n">y_lower</span> <span class="o">=</span> <span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min&quot;</span><span class="p">,</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y_min</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">y_min</span><span class="p">)</span>
-                <span class="n">y_upper</span> <span class="o">=</span> <span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max&quot;</span><span class="p">,</span> <span class="mi">4000</span> <span class="k">if</span> <span class="n">y_max</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">y_max</span><span class="p">)</span>
-                <span class="n">row_z_min</span> <span class="o">=</span> <span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min&quot;</span><span class="p">)</span>
-                <span class="n">row_z_max</span> <span class="o">=</span> <span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max&quot;</span><span class="p">)</span>
+                <span class="n">key_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">scale_function_y</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">scale_function_z</span><span class="si">}</span><span class="s2">"</span>
+                <span class="n">y_lower</span> <span class="o">=</span> <span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_min"</span><span class="p">,</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y_min</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">y_min</span><span class="p">)</span>
+                <span class="n">y_upper</span> <span class="o">=</span> <span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_y_max"</span><span class="p">,</span> <span class="mi">4000</span> <span class="k">if</span> <span class="n">y_max</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">y_max</span><span class="p">)</span>
+                <span class="n">row_z_min</span> <span class="o">=</span> <span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_min"</span><span class="p">)</span>
+                <span class="n">row_z_max</span> <span class="o">=</span> <span class="n">global_extrema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}</span><span class="s2">_z_max"</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">y_lower</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y_min</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">y_min</span>
                 <span class="n">y_upper</span> <span class="o">=</span> <span class="mi">4000</span> <span class="k">if</span> <span class="n">y_max</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">y_max</span>
@@ -325,27 +325,27 @@
 
             <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span>
-                    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span>
-                    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span>
-                    <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">inst</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
-                    <span class="s2">&quot;y_label&quot;</span><span class="p">:</span> <span class="s2">&quot;Energy (eV)&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;z_label&quot;</span><span class="p">:</span> <span class="s2">&quot;Counts&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;vmin&quot;</span><span class="p">:</span> <span class="n">vmin</span><span class="p">,</span>
-                    <span class="s2">&quot;vmax&quot;</span><span class="p">:</span> <span class="n">vmax</span><span class="p">,</span>
-                    <span class="s2">&quot;y_min&quot;</span><span class="p">:</span> <span class="n">y_lower</span><span class="p">,</span>
-                    <span class="s2">&quot;y_max&quot;</span><span class="p">:</span> <span class="n">y_upper</span><span class="p">,</span>
-                    <span class="o">**</span><span class="p">({</span><span class="s2">&quot;z_min&quot;</span><span class="p">:</span> <span class="n">z_min</span><span class="p">}</span> <span class="k">if</span> <span class="n">z_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
-                    <span class="o">**</span><span class="p">({</span><span class="s2">&quot;z_max&quot;</span><span class="p">:</span> <span class="n">z_max</span><span class="p">}</span> <span class="k">if</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
+                    <span class="s2">"x"</span><span class="p">:</span> <span class="n">times</span><span class="p">,</span>
+                    <span class="s2">"y"</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span>
+                    <span class="s2">"data"</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span>
+                    <span class="s2">"label"</span><span class="p">:</span> <span class="n">inst</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                    <span class="s2">"y_label"</span><span class="p">:</span> <span class="s2">"Energy (eV)"</span><span class="p">,</span>
+                    <span class="s2">"z_label"</span><span class="p">:</span> <span class="s2">"Counts"</span><span class="p">,</span>
+                    <span class="s2">"vmin"</span><span class="p">:</span> <span class="n">vmin</span><span class="p">,</span>
+                    <span class="s2">"vmax"</span><span class="p">:</span> <span class="n">vmax</span><span class="p">,</span>
+                    <span class="s2">"y_min"</span><span class="p">:</span> <span class="n">y_lower</span><span class="p">,</span>
+                    <span class="s2">"y_max"</span><span class="p">:</span> <span class="n">y_upper</span><span class="p">,</span>
+                    <span class="o">**</span><span class="p">({</span><span class="s2">"z_min"</span><span class="p">:</span> <span class="n">z_min</span><span class="p">}</span> <span class="k">if</span> <span class="n">z_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
+                    <span class="o">**</span><span class="p">({</span><span class="s2">"z_max"</span><span class="p">:</span> <span class="n">z_max</span><span class="p">}</span> <span class="k">if</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
                 <span class="p">}</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load CDF for </span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">cdf_path</span><span class="si">}</span><span class="s2">. Skipping.&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="p">)</span>
+            <span class="n">log_exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to load CDF for </span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">cdf_path</span><span class="si">}</span><span class="s2">. Skipping."</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"error"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">datasets</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
-    <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> -  ESA Spectrograms&quot;</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Orbit </span><span class="si">{</span><span class="n">orbit_number</span><span class="si">}</span><span class="s2"> -  ESA Spectrograms"</span>
     <span class="k">return</span> <span class="n">generic_plot_multirow_optional_zoom</span><span class="p">(</span>
         <span class="n">datasets</span><span class="p">,</span>
         <span class="n">vertical_lines</span><span class="o">=</span><span class="n">vertical_lines</span><span class="p">,</span>

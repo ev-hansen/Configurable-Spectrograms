@@ -31,14 +31,14 @@
           <div class="body" role="main">
             
   <h1>Source code for configurable_spectrograms.logging_utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Buffered logging shared by the generic and FAST batch/plotting pipelines.</span>
+<span></span><span class="sd">"""Buffered logging shared by the generic and FAST batch/plotting pipelines.</span>
 
 <span class="sd">Log messages are queued in memory and flushed to disk in batches to avoid a</span>
 <span class="sd">disk write per message during large batch runs. The destination file is set</span>
-<span class="sd">explicitly via :func:`set_logfile_path` (typically once, from a CLI&#39;s</span>
+<span class="sd">explicitly via :func:`set_logfile_path` (typically once, from a CLI's</span>
 <span class="sd">``main()``) rather than resolved as a side effect of importing this module,</span>
 <span class="sd">so importing the library never touches the filesystem.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
@@ -54,7 +54,7 @@
 <div class="viewcode-block" id="get_logfile_path">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.get_logfile_path">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_logfile_path</span><span class="p">(</span><span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datetime_marker_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a persistent per-run log file path derived from a marker file.</span>
+<span class="w">    </span><span class="sd">"""Return a persistent per-run log file path derived from a marker file.</span>
 
 <span class="sd">    The marker file at *datetime_marker_path* holds a timestamp string that is</span>
 <span class="sd">    created on first use and reused afterwards, so repeated runs of the same</span>
@@ -63,28 +63,28 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    prefix : str</span>
-<span class="sd">        Filename prefix for the resulting log path (e.g. ``&#39;./batch_log&#39;``).</span>
+<span class="sd">        Filename prefix for the resulting log path (e.g. ``'./batch_log'``).</span>
 <span class="sd">    datetime_marker_path : str</span>
 <span class="sd">        Path to a small text file used to persist the timestamp marker.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    str</span>
-<span class="sd">        Log file path of the form ``f&quot;{prefix}_{timestamp}.log&quot;``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        Log file path of the form ``f"{prefix}_{timestamp}.log"``.</span>
+<span class="sd">    """</span>
     <span class="n">marker</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">datetime_marker_path</span><span class="p">)</span>
-    <span class="n">marker_text</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">marker</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">marker_text</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">marker</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">else</span> <span class="s2">""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">marker_text</span><span class="p">:</span>
-        <span class="n">marker_text</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">_%H-%M-%S&quot;</span><span class="p">)</span>
+        <span class="n">marker_text</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">_%H-%M-%S"</span><span class="p">)</span>
         <span class="n">marker</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">marker_text</span><span class="p">)</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">marker_text</span><span class="si">}</span><span class="s2">.log&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">marker_text</span><span class="si">}</span><span class="s2">.log"</span></div>
 
 
 
 <div class="viewcode-block" id="set_logfile_path">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.set_logfile_path">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_logfile_path</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the destination file that buffered log flushes are written to.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Set the destination file that buffered log flushes are written to."""</span>
     <span class="k">global</span> <span class="n">_LOGFILE_PATH</span>
     <span class="n">_LOGFILE_PATH</span> <span class="o">=</span> <span class="n">path</span></div>
 
@@ -93,28 +93,28 @@
 <div class="viewcode-block" id="configure_log_batch">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.configure_log_batch">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">configure_log_batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configure buffered logging batch size.</span>
+<span class="w">    </span><span class="sd">"""Configure buffered logging batch size.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    batch_size : int</span>
 <span class="sd">        Desired number of log records to accumulate before an automatic</span>
 <span class="sd">        flush. Values less than 1 are coerced to 1.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">global</span> <span class="n">_LOG_BATCH_SIZE</span>
     <span class="n">_LOG_BATCH_SIZE</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_size</span><span class="p">))</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_flush_log_buffer</span><span class="p">(</span><span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flush buffered log messages to disk.</span>
+<span class="w">    </span><span class="sd">"""Flush buffered log messages to disk.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    force : bool, default False</span>
 <span class="sd">        If True, flush even if the current buffer length is below the</span>
 <span class="sd">        configured batch size threshold.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_LOG_BUFFER</span><span class="p">:</span>
         <span class="k">return</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_LOG_BUFFER</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">_LOG_BATCH_SIZE</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force</span><span class="p">:</span>
@@ -123,11 +123,11 @@
         <span class="n">_LOG_BUFFER</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="k">return</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_LOGFILE_PATH</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">logfile_out</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_LOGFILE_PATH</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">logfile_out</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">level</span><span class="p">,</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">_LOG_BUFFER</span><span class="p">:</span>
-                <span class="n">logfile_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ERROR] </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span> <span class="k">else</span> <span class="n">msg</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logfile_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[ERROR] </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s2">"error"</span> <span class="k">else</span> <span class="n">msg</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">log_flush_exception</span><span class="p">:</span>
-        <span class="n">tqdm</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ERROR] Failed flushing log buffer: </span><span class="si">{</span><span class="n">log_flush_exception</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">tqdm</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[ERROR] Failed flushing log buffer: </span><span class="si">{</span><span class="n">log_flush_exception</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">_LOG_BUFFER</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
@@ -135,13 +135,13 @@
 <div class="viewcode-block" id="log_message">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.log_message">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">log_message</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">force_flush</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Queue an informational log message.</span>
+<span class="w">    </span><span class="sd">"""Queue an informational log message.</span>
 
 <span class="sd">    Messages are appended to an in-memory buffer; a flush occurs</span>
 <span class="sd">    automatically once the configured batch size is reached or</span>
 <span class="sd">    ``force_flush`` is True.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_LOG_BUFFER</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">))</span>
+<span class="sd">    """</span>
+    <span class="n">_LOG_BUFFER</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">"info"</span><span class="p">,</span> <span class="n">message</span><span class="p">))</span>
     <span class="n">_flush_log_buffer</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force_flush</span><span class="p">)</span></div>
 
 
@@ -149,9 +149,9 @@
 <div class="viewcode-block" id="log_error">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.log_error">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">log_error</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">force_flush</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Queue an error log message and echo it to the console immediately.&quot;&quot;&quot;</span>
-    <span class="n">tqdm</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;[ERROR] &quot;</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span>
-    <span class="n">_LOG_BUFFER</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">))</span>
+<span class="w">    </span><span class="sd">"""Queue an error log message and echo it to the console immediately."""</span>
+    <span class="n">tqdm</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"[ERROR] "</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span>
+    <span class="n">_LOG_BUFFER</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">"error"</span><span class="p">,</span> <span class="n">message</span><span class="p">))</span>
     <span class="n">_flush_log_buffer</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force_flush</span><span class="p">)</span></div>
 
 
@@ -159,7 +159,7 @@
 <div class="viewcode-block" id="flush_log_buffer">
 <a class="viewcode-back" href="../../modules.html#batch_multi_plot_spectrogram.flush_log_buffer">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">flush_log_buffer</span><span class="p">(</span><span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Publicly flush any buffered log messages to disk (see :func:`log_message`).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Publicly flush any buffered log messages to disk (see :func:`log_message`)."""</span>
     <span class="n">_flush_log_buffer</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span></div>
 
 
@@ -169,11 +169,11 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">log_exception</span><span class="p">(</span>
     <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">exception</span><span class="p">:</span> <span class="ne">BaseException</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+    <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"error"</span><span class="p">,</span>
     <span class="n">include_trace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">force_flush</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log a message, optionally with an exception and traceback.</span>
+<span class="w">    </span><span class="sd">"""Log a message, optionally with an exception and traceback.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -181,21 +181,21 @@
 <span class="sd">        Human-readable message prefix.</span>
 <span class="sd">    exception : BaseException or None, optional</span>
 <span class="sd">        Optional exception; if given, its class name and value are appended.</span>
-<span class="sd">    level : {&#39;error&#39;, &#39;message&#39;}, default &#39;error&#39;</span>
-<span class="sd">        ``&#39;error&#39;`` routes to :func:`log_error`; anything else routes to</span>
+<span class="sd">    level : {'error', 'message'}, default 'error'</span>
+<span class="sd">        ``'error'`` routes to :func:`log_error`; anything else routes to</span>
 <span class="sd">        :func:`log_message`.</span>
 <span class="sd">    include_trace : bool, default False</span>
 <span class="sd">        If True and an exception is given, also log a formatted traceback.</span>
 <span class="sd">    force_flush : bool, default False</span>
 <span class="sd">        Force an immediate buffer flush after logging this message (and the</span>
 <span class="sd">        traceback, if any).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">exception_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">exception</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">if</span> <span class="n">exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-    <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">exception_name</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">exception</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">exception_name</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
-    <span class="p">(</span><span class="n">log_error</span> <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span> <span class="k">else</span> <span class="n">log_message</span><span class="p">)(</span><span class="n">message</span><span class="p">,</span> <span class="n">force_flush</span><span class="o">=</span><span class="n">force_flush</span><span class="p">)</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">exception_name</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">exception</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">exception_name</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">log_error</span> <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="s2">"error"</span> <span class="k">else</span> <span class="n">log_message</span><span class="p">)(</span><span class="n">message</span><span class="p">,</span> <span class="n">force_flush</span><span class="o">=</span><span class="n">force_flush</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">include_trace</span> <span class="ow">and</span> <span class="n">exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">trace</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">exception</span><span class="p">),</span> <span class="n">exception</span><span class="p">,</span> <span class="n">exception</span><span class="o">.</span><span class="n">__traceback__</span><span class="p">))</span>
-        <span class="n">log_message</span><span class="p">(</span><span class="s2">&quot;[TRACE]</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">trace</span><span class="p">,</span> <span class="n">force_flush</span><span class="o">=</span><span class="n">force_flush</span><span class="p">)</span></div>
+        <span class="n">trace</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">exception</span><span class="p">),</span> <span class="n">exception</span><span class="p">,</span> <span class="n">exception</span><span class="o">.</span><span class="n">__traceback__</span><span class="p">))</span>
+        <span class="n">log_message</span><span class="p">(</span><span class="s2">"[TRACE]</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">trace</span><span class="p">,</span> <span class="n">force_flush</span><span class="o">=</span><span class="n">force_flush</span><span class="p">)</span></div>
 
 </pre></div>
 

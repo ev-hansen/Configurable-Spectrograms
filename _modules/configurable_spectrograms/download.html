@@ -31,12 +31,15 @@
           <div class="body" role="main">
             
   <h1>Source code for configurable_spectrograms.download</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;FAST ESA CDF file downloading from CDA Web: single-day, single-year, and threaded batch.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""FAST ESA CDF file downloading from CDA Web: single-day, single-year, and threaded batch."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">calendar</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
@@ -46,72 +49,143 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.batch_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_batch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">configurable_spectrograms.logging_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_error</span>
 
-<span class="n">FAST_ESA_BASE_URL</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2&quot;</span>
+<span class="n">FAST_ESA_BASE_URL</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"https://cdaweb.gsfc.nasa.gov/pub/data/fast/esa/l2"</span>
 <span class="n">INSTRUMENT_OPTIONS</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;eeb&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ees&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ieb&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ies&quot;</span><span class="p">,</span>
-<span class="p">}</span>  <span class="c1"># &quot;esv&quot; also an option for FAST</span>
+    <span class="s2">"eeb"</span><span class="p">,</span>
+    <span class="s2">"ees"</span><span class="p">,</span>
+    <span class="s2">"ieb"</span><span class="p">,</span>
+    <span class="s2">"ies"</span><span class="p">,</span>
+<span class="p">}</span>  <span class="c1"># "esv" also an option for FAST</span>
 <span class="n">DEFAULT_INSTRUMENT_LIST</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">INSTRUMENT_OPTIONS</span><span class="p">)</span>
 <span class="n">DEFAULT_YEAR</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2000</span>
-<span class="n">DEFAULT_FOLDER</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./FAST_data/&quot;</span>
+<span class="n">DEFAULT_FOLDER</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"./FAST_data/"</span>
 <span class="c1">#: Earliest and latest calendar days with any FAST ESA CDF coverage on CDA Web.</span>
 <span class="n">FAST_MIN_DATE</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">1996</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
 <span class="n">FAST_MAX_DATE</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2009</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
+<span class="c1"># CDA Web occasionally rate-limits (HTTP 429) or drops a connection under the</span>
+<span class="c1"># concurrent request load download_cdf_files_threaded's thread pool</span>
+<span class="c1"># generates; a 429 window usually clears within a couple of minutes, longer</span>
+<span class="c1"># than a single unretried request would ever wait out on its own.</span>
+<span class="n">DOWNLOAD_RETRY_DELAYS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">30.0</span><span class="p">,</span> <span class="mf">60.0</span><span class="p">,</span> <span class="mf">120.0</span><span class="p">,</span> <span class="mf">240.0</span><span class="p">)</span>
+<span class="c1">#: Floor on how often any thread may start a new request, tracked via</span>
+<span class="c1">#: ``_last_request_finished_at`` below -- a burst of threads firing the</span>
+<span class="c1">#: instant the pacing window opens is itself enough request rate to draw a</span>
+<span class="c1">#: 429, even with no two requests ever truly overlapping.</span>
+<span class="n">MIN_REQUEST_INTERVAL_SECONDS</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<span class="n">_request_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="n">_last_request_finished_at</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_paced_request</span><span class="p">(</span>
+    <span class="n">request_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">],</span>
+    <span class="n">min_interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">MIN_REQUEST_INTERVAL_SECONDS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Call *request_fn*, paced to at least *min_interval* seconds since the</span>
+<span class="sd">    previous call across every calling thread, serialized through a shared</span>
+<span class="sd">    lock so concurrent download threads don't all fire their next request</span>
+<span class="sd">    the instant the pacing window opens. Propagates whatever *request_fn*</span>
+<span class="sd">    raises.</span>
+<span class="sd">    """</span>
+    <span class="k">global</span> <span class="n">_last_request_finished_at</span>
+    <span class="k">with</span> <span class="n">_request_lock</span><span class="p">:</span>
+        <span class="n">remaining</span> <span class="o">=</span> <span class="n">min_interval</span> <span class="o">-</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span> <span class="o">-</span> <span class="n">_last_request_finished_at</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">remaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">request_fn</span><span class="p">()</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">_last_request_finished_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_request_with_retry</span><span class="p">(</span>
+    <span class="n">request_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">],</span>
+    <span class="n">delays</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">DOWNLOAD_RETRY_DELAYS</span><span class="p">,</span>
+    <span class="n">min_interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">MIN_REQUEST_INTERVAL_SECONDS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Call *request_fn* (a zero-argument ``requests.get`` wrapper) via</span>
+<span class="sd">    :func:`_paced_request`, retrying with an increasing pause (*delays*) on</span>
+<span class="sd">    a network error or an HTTP 429 response.</span>
+
+<span class="sd">    The final attempt, once *delays* is exhausted, isn't caught: a network</span>
+<span class="sd">    error propagates as-is, and a still-429 response is turned into a</span>
+<span class="sd">    ``requests.exceptions.HTTPError`` via ``raise_for_status()`` rather than</span>
+<span class="sd">    being returned as if it were a normal response.</span>
+<span class="sd">    """</span>
+    <span class="k">for</span> <span class="n">attempt</span><span class="p">,</span> <span class="n">delay</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">delays</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">_paced_request</span><span class="p">(</span><span class="n">request_fn</span><span class="p">,</span> <span class="n">min_interval</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">429</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">response</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="s2">"HTTP 429"</span>
+        <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[DOWNLOAD] </span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2"> on attempt </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2"> -- retrying in </span><span class="si">{</span><span class="n">delay</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">_paced_request</span><span class="p">(</span><span class="n">request_fn</span><span class="p">,</span> <span class="n">min_interval</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_download_single_cdf_file</span><span class="p">(</span><span class="n">download_link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stream one CDF file from *download_link* to *output_file*.</span>
+<span class="w">    </span><span class="sd">"""Stream one CDF file from *download_link* to *output_file*.</span>
 
 <span class="sd">    Falls back to a single non-streamed write only when the server omits a</span>
 <span class="sd">    ``Content-Length`` header, which avoids buffering the whole response in</span>
-<span class="sd">    memory for every ordinary download.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">download_link</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content-length&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="sd">    memory for every ordinary download. Retried/paced via</span>
+<span class="sd">    :func:`_request_with_retry`, and status-checked before writing -- a bare</span>
+<span class="sd">    ``requests.get`` here previously had no way to notice a rate-limit</span>
+<span class="sd">    response and would silently write it to disk as if it were the real CDF.</span>
+<span class="sd">    """</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">_request_with_retry</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">download_link</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"content-length"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
         <span class="k">return</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">4096</span><span class="p">):</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_list_instrument_page_files</span><span class="p">(</span><span class="n">page</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scrape one CDA Web month-listing page and return its linked ``.cdf`` file names.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Scrape one CDA Web month-listing page and return its linked ``.cdf`` file names."""</span>
     <span class="c1"># based on code by scrapingbee and Amjad Hussain Syed</span>
     <span class="c1"># archived page on scrapingbee:</span>
     <span class="c1">#     https://web.archive.org/web/20250630144357/https://www.scrapingbee.com/webscraping-questions/beautifulsoup/how-to-find-all-links-using-beautifulsoup-and-python/</span>
-    <span class="c1"># archived code by Amjad Hussain Syed&#39;s on stack overflow:</span>
+    <span class="c1"># archived code by Amjad Hussain Syed's on stack overflow:</span>
     <span class="c1">#     https://web.archive.org/web/20250630134956/https://stackoverflow.com/questions/68969647/download-all-files-with-extension-from-a-page</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
-    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">href</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">href</span> <span class="o">:=</span> <span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;href&quot;</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;.cdf&quot;</span> <span class="ow">in</span> <span class="n">href</span><span class="p">]</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">_request_with_retry</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">page</span><span class="p">))</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s2">"html.parser"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">href</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">"a"</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">href</span> <span class="o">:=</span> <span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"href"</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">".cdf"</span> <span class="ow">in</span> <span class="n">href</span><span class="p">]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_matches_day</span><span class="p">(</span><span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">date_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether *file_name* is a FAST ESA CDF for *instrument* on *date_str*.</span>
+<span class="w">    </span><span class="sd">"""Return whether *file_name* is a FAST ESA CDF for *instrument* on *date_str*.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    file_name : str</span>
 <span class="sd">        Bare CDF file name (e.g. from a CDA Web directory listing link).</span>
 <span class="sd">    instrument : str</span>
-<span class="sd">        Instrument code (e.g. ``&#39;eeb&#39;``).</span>
+<span class="sd">        Instrument code (e.g. ``'eeb'``).</span>
 <span class="sd">    date_str : str</span>
-<span class="sd">        Calendar day as ``&#39;YYYYMMDD&#39;``.</span>
+<span class="sd">        Calendar day as ``'YYYYMMDD'``.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; _matches_day(&quot;fa_esa_l2_eeb_20000101001737_13312_v02.cdf&quot;, &quot;eeb&quot;, &quot;20000101&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; _matches_day("fa_esa_l2_eeb_20000101001737_13312_v02.cdf", "eeb", "20000101")</span>
 <span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; _matches_day(&quot;fa_esa_l2_eeb_20000102001737_13313_v02.cdf&quot;, &quot;eeb&quot;, &quot;20000101&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; _matches_day("fa_esa_l2_eeb_20000102001737_13313_v02.cdf", "eeb", "20000101")</span>
 <span class="sd">    False</span>
-<span class="sd">    &gt;&gt;&gt; _matches_day(&quot;fa_esa_l2_ies_20000101001737_13312_v02.cdf&quot;, &quot;eeb&quot;, &quot;20000101&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; _matches_day("fa_esa_l2_ies_20000101001737_13312_v02.cdf", "eeb", "20000101")</span>
 <span class="sd">    False</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.cdf&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">date_str</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">file_name</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".cdf"</span><span class="p">)</span> <span class="ow">and</span> <span class="sa">f</span><span class="s2">"_</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">date_str</span><span class="si">}</span><span class="s2">"</span> <span class="ow">in</span> <span class="n">file_name</span>
 
 
 <div class="viewcode-block" id="download_single_day_cdf">
@@ -123,7 +197,7 @@
     <span class="n">data_folder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_FOLDER</span><span class="p">,</span>
     <span class="n">_page_file_names</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download every FAST ESA CDF file for one calendar day, per instrument.</span>
+<span class="w">    </span><span class="sd">"""Download every FAST ESA CDF file for one calendar day, per instrument.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -132,8 +206,8 @@
 <span class="sd">        :data:`FAST_MIN_DATE` through :data:`FAST_MAX_DATE`; a date outside</span>
 <span class="sd">        that range simply returns empty lists.</span>
 <span class="sd">    instruments : list of str, default DEFAULT_INSTRUMENT_LIST</span>
-<span class="sd">        Instrument codes to download (e.g. ``[&#39;eeb&#39;, &#39;ees&#39;]``); the ones</span>
-<span class="sd">        desired can be specified explicitly, e.g. when called from a CLI&#39;s</span>
+<span class="sd">        Instrument codes to download (e.g. ``['eeb', 'ees']``); the ones</span>
+<span class="sd">        desired can be specified explicitly, e.g. when called from a CLI's</span>
 <span class="sd">        ``--instruments`` argument.</span>
 <span class="sd">    base_url : str, default FAST_ESA_BASE_URL</span>
 <span class="sd">        Base CDA Web URL for FAST ESA level-2 data.</span>
@@ -154,15 +228,15 @@
 <span class="sd">        commonly spans several FAST orbits, so an instrument may map to more</span>
 <span class="sd">        than one file; an instrument with no data that day maps to an empty</span>
 <span class="sd">        list.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">web_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">month</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">date_str</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">fast_data_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">    """</span>
+    <span class="n">web_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">month</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">date_str</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">fast_data_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">data_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">fast_data_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">results</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">:</span>
-        <span class="n">page</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">if</span> <span class="n">_page_file_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">file_names</span> <span class="o">=</span> <span class="n">_page_file_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">instrument</span><span class="p">,</span> <span class="p">[])</span>
         <span class="k">else</span><span class="p">:</span>
@@ -170,9 +244,9 @@
         <span class="n">output_files</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">file_names</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">_matches_day</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">instrument</span><span class="p">,</span> <span class="n">date_str</span><span class="p">):</span>
-                <span class="n">output_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fast_data_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">output_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">fast_data_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">"</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>
-                    <span class="n">_download_single_cdf_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+                    <span class="n">_download_single_cdf_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
                 <span class="n">output_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
         <span class="n">results</span><span class="p">[</span><span class="n">instrument</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">output_files</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">results</span></div>
@@ -187,7 +261,7 @@
     <span class="n">data_folder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_FOLDER</span><span class="p">,</span>
     <span class="n">instruments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_INSTRUMENT_LIST</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download one year of FAST ESA CDF files from CDA Web.</span>
+<span class="w">    </span><span class="sd">"""Download one year of FAST ESA CDF files from CDA Web.</span>
 
 <span class="sd">    Scrapes each month/instrument listing page once, then calls</span>
 <span class="sd">    :func:`download_single_day_cdf` for every calendar day of *year* against</span>
@@ -205,22 +279,22 @@
 <span class="sd">        Root output directory; files are saved under</span>
 <span class="sd">        ``{data_folder}/{year}/{month}/``.</span>
 <span class="sd">    instruments : list of str, default DEFAULT_INSTRUMENT_LIST</span>
-<span class="sd">        Instrument codes to download (e.g. ``[&#39;eeb&#39;, &#39;ees&#39;]``).</span>
+<span class="sd">        Instrument codes to download (e.g. ``['eeb', 'ees']``).</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    For downloading many years at once with thread-pool parallelism, see</span>
 <span class="sd">    :func:`download_cdf_files_threaded`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">for</span> <span class="n">month_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span>
         <span class="n">web_folder</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">month_index</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;STATUS: Loading month listing pages for </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"STATUS: Loading month listing pages for </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">page_file_names</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">instrument</span><span class="p">:</span> <span class="n">_list_instrument_page_files</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">instrument</span><span class="p">:</span> <span class="n">_list_instrument_page_files</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">instruments</span>
         <span class="p">}</span>
         <span class="n">days_in_month</span> <span class="o">=</span> <span class="n">calendar</span><span class="o">.</span><span class="n">monthrange</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month_index</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">month_index</span><span class="si">}</span><span class="s2">/12 | downloading files for </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">month_index</span><span class="si">}</span><span class="s2">/12 | downloading files for </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">day_index</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">days_in_month</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
             <span class="n">download_single_day_cdf</span><span class="p">(</span>
                 <span class="n">date</span><span class="o">=</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month_index</span><span class="p">,</span> <span class="n">day_index</span><span class="p">),</span>
@@ -235,34 +309,31 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_discover_download_targets</span><span class="p">(</span>
     <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">years</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">instruments</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">data_folder</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scrape CDA Web listings for every (year, month, instrument) combination.</span>
+<span class="w">    </span><span class="sd">"""Scrape CDA Web listings for every (year, month, instrument) combination.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    list of tuple</span>
 <span class="sd">        ``(download_link, output_file)`` pairs for files not already present</span>
 <span class="sd">        on disk.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">targets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">years</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">month_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span>
             <span class="n">web_folder</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">month_index</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">instrument</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">:</span>
-                <span class="n">fast_data_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">fast_data_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">data_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">fast_data_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">page</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">page</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">web_folder</span><span class="si">}</span><span class="s2">"</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+                    <span class="n">file_names</span> <span class="o">=</span> <span class="n">_list_instrument_page_files</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
                 <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-                    <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DOWNLOAD] Failed to load listing page </span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[DOWNLOAD] Failed to load listing page </span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                     <span class="k">continue</span>
-                <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">):</span>
-                    <span class="n">file_name</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;href&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">file_name</span> <span class="ow">and</span> <span class="s2">&quot;.cdf&quot;</span> <span class="ow">in</span> <span class="n">file_name</span><span class="p">:</span>
-                        <span class="n">output_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fast_data_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span>
-                        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>
-                            <span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output_file</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">file_names</span><span class="p">:</span>
+                    <span class="n">output_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">fast_data_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>
+                        <span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">output_file</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">targets</span>
 
 
@@ -278,7 +349,7 @@
     <span class="n">ignore_progress_json</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">flush_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download many years of FAST ESA CDF files in parallel using a thread pool.</span>
+<span class="w">    </span><span class="sd">"""Download many years of FAST ESA CDF files in parallel using a thread pool.</span>
 
 <span class="sd">    Listing pages are scraped sequentially first (cheap -- one small HTML</span>
 <span class="sd">    page per year/month/instrument combination), then every individual file</span>
@@ -314,8 +385,8 @@
 <span class="sd">    -------</span>
 <span class="sd">    list of tuple</span>
 <span class="sd">        Sequence of ``((download_link, output_file), status)`` results,</span>
-<span class="sd">        where ``status`` is ``&#39;ok&#39;`` or ``&#39;error&#39;``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        where ``status`` is ``'ok'`` or ``'error'``.</span>
+<span class="sd">    """</span>
     <span class="n">resolved_years</span> <span class="o">=</span> <span class="n">years</span> <span class="k">if</span> <span class="n">years</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">DEFAULT_YEAR</span><span class="p">]</span>
     <span class="n">targets</span> <span class="o">=</span> <span class="n">_discover_download_targets</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">resolved_years</span><span class="p">,</span> <span class="n">instruments</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">)</span>
 
@@ -323,10 +394,10 @@
         <span class="n">download_link</span><span class="p">,</span> <span class="n">output_file</span> <span class="o">=</span> <span class="n">target</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">_download_single_cdf_file</span><span class="p">(</span><span class="n">download_link</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">&quot;ok&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">"ok"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DOWNLOAD-FAIL] </span><span class="si">{</span><span class="n">download_link</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+            <span class="n">log_error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[DOWNLOAD-FAIL] </span><span class="si">{</span><span class="n">download_link</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">run_batch</span><span class="p">(</span>
         <span class="n">targets</span><span class="p">,</span>

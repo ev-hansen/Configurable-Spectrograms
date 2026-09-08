@@ -73,11 +73,11 @@ unspecified.</p>
 <h2>Progress JSON Schema (Generic)<a class="headerlink" href="#progress-json-schema-generic" title="Link to this heading">¶</a></h2>
 <p>The progress JSON managed by <code class="docutils literal notranslate"><span class="pre">generic_batch_plot</span></code> contains keys (illustrative):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s2">&quot;completed_items&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;itemA&quot;</span><span class="p">,</span> <span class="s2">&quot;itemB&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-    <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;itemC&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;no_data&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;itemD&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;last_index&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
-    <span class="s2">&quot;schema_version&quot;</span><span class="p">:</span> <span class="mi">1</span>
+    <span class="s2">"completed_items"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"itemA"</span><span class="p">,</span> <span class="s2">"itemB"</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="s2">"errors"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"itemC"</span><span class="p">],</span>
+    <span class="s2">"no_data"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"itemD"</span><span class="p">],</span>
+    <span class="s2">"last_index"</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="s2">"schema_version"</span><span class="p">:</span> <span class="mi">1</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -105,7 +105,7 @@ unspecified.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">batch_multi_plot_spectrogram</span><span class="w"> </span><span class="kn">import</span> <span class="n">generic_batch_plot</span>
 
 <span class="c1"># Suppose we have a pre-built list of items and a loader that yields datasets</span>
-<span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;orbit_001&quot;</span><span class="p">,</span> <span class="s2">&quot;orbit_002&quot;</span><span class="p">,</span> <span class="s2">&quot;orbit_003&quot;</span><span class="p">]</span>
+<span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"orbit_001"</span><span class="p">,</span> <span class="s2">"orbit_002"</span><span class="p">,</span> <span class="s2">"orbit_003"</span><span class="p">]</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_datasets_for_item</span><span class="p">(</span><span class="n">item_id</span><span class="p">):</span>
     <span class="c1"># Return list[dict] each with keys: x, y, data, label (and optional vmin/vmax)</span>
@@ -113,7 +113,7 @@ unspecified.</p>
 
 <span class="n">generic_batch_plot</span><span class="p">(</span>
     <span class="n">items</span><span class="o">=</span><span class="n">items</span><span class="p">,</span>
-    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;plots_generic&quot;</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">"plots_generic"</span><span class="p">,</span>
     <span class="n">build_datasets_fn</span><span class="o">=</span><span class="n">load_datasets_for_item</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
@@ -123,7 +123,7 @@ unspecified.</p>
 <h3>Custom Batching and Logging<a class="headerlink" href="#custom-batching-and-logging" title="Link to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">generic_batch_plot</span><span class="p">(</span>
     <span class="n">items</span><span class="o">=</span><span class="n">items</span><span class="p">,</span>
-    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;plots_generic&quot;</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">"plots_generic"</span><span class="p">,</span>
     <span class="n">build_datasets_fn</span><span class="o">=</span><span class="n">load_datasets_for_item</span><span class="p">,</span>
     <span class="n">flush_batch_size</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
     <span class="n">log_flush_batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
@@ -135,16 +135,16 @@ unspecified.</p>
 <h3>Resuming After Interruption<a class="headerlink" href="#resuming-after-interruption" title="Link to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">generic_batch_plot</span><span class="p">(</span>
     <span class="n">items</span><span class="o">=</span><span class="n">items</span><span class="p">,</span>
-    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;plots_generic&quot;</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">"plots_generic"</span><span class="p">,</span>
     <span class="n">build_datasets_fn</span><span class="o">=</span><span class="n">load_datasets_for_item</span><span class="p">,</span>
-    <span class="n">progress_json_path</span><span class="o">=</span><span class="s2">&quot;generic_progress.json&quot;</span><span class="p">,</span>  <span class="c1"># default</span>
+    <span class="n">progress_json_path</span><span class="o">=</span><span class="s2">"generic_progress.json"</span><span class="p">,</span>  <span class="c1"># default</span>
 <span class="p">)</span>  <span class="c1"># picks up where it left off</span>
 </pre></div>
 </div>
 <p>Force Fresh Processing (ignore prior progress):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">generic_batch_plot</span><span class="p">(</span>
     <span class="n">items</span><span class="o">=</span><span class="n">items</span><span class="p">,</span>
-    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;plots_generic&quot;</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">"plots_generic"</span><span class="p">,</span>
     <span class="n">build_datasets_fn</span><span class="o">=</span><span class="n">load_datasets_for_item</span><span class="p">,</span>
     <span class="n">ignore_progress_json</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
@@ -160,11 +160,11 @@ as the row’s native color limits (still clamped by any global <code class="doc
 arguments passed to <code class="docutils literal notranslate"><span class="pre">generic_plot_spectrogram_set</span></code>).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_datasets_for_item</span><span class="p">(</span><span class="n">item_id</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span>
-        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x1</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">y1</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">d1</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;EES&quot;</span><span class="p">,</span> <span class="s2">&quot;y_min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;y_max&quot;</span><span class="p">:</span> <span class="mi">4000</span><span class="p">},</span>
-        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x2</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">y2</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">d2</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;IES&quot;</span><span class="p">,</span> <span class="s2">&quot;z_min&quot;</span><span class="p">:</span> <span class="mf">1e-2</span><span class="p">,</span> <span class="s2">&quot;z_max&quot;</span><span class="p">:</span> <span class="mf">1e2</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x1</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">:</span> <span class="n">y1</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="n">d1</span><span class="p">,</span> <span class="s2">"label"</span><span class="p">:</span> <span class="s2">"EES"</span><span class="p">,</span> <span class="s2">"y_min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"y_max"</span><span class="p">:</span> <span class="mi">4000</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x2</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">:</span> <span class="n">y2</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="n">d2</span><span class="p">,</span> <span class="s2">"label"</span><span class="p">:</span> <span class="s2">"IES"</span><span class="p">,</span> <span class="s2">"z_min"</span><span class="p">:</span> <span class="mf">1e-2</span><span class="p">,</span> <span class="s2">"z_max"</span><span class="p">:</span> <span class="mf">1e2</span><span class="p">},</span>
     <span class="p">]</span>
 
-<span class="n">generic_batch_plot</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="s2">&quot;plots_generic&quot;</span><span class="p">,</span> <span class="n">load_datasets_for_item</span><span class="p">)</span>
+<span class="n">generic_batch_plot</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="s2">"plots_generic"</span><span class="p">,</span> <span class="n">load_datasets_for_item</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -176,8 +176,8 @@ optional right-hand zoom column when data exist inside the derived window:</p>
     <span class="n">datasets</span><span class="o">=</span><span class="n">my_datasets</span><span class="p">,</span>
     <span class="n">vertical_lines</span><span class="o">=</span><span class="p">[</span><span class="n">t0</span><span class="p">,</span> <span class="n">t1</span><span class="p">],</span>
     <span class="n">zoom_duration_minutes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">colormap</span><span class="o">=</span><span class="s2">&quot;plasma&quot;</span><span class="p">,</span>
-    <span class="n">z_scale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
+    <span class="n">colormap</span><span class="o">=</span><span class="s2">"plasma"</span><span class="p">,</span>
+    <span class="n">z_scale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -191,9 +191,9 @@ optional right-hand zoom column when data exist inside the derived window:</p>
     <span class="n">y_axis_values</span><span class="o">=</span><span class="n">energy_ev</span><span class="p">,</span>
     <span class="n">data_array_3d</span><span class="o">=</span><span class="n">data_cube</span><span class="p">,</span>
     <span class="n">collapse_axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">y_axis_scale_function</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
-    <span class="n">z_axis_scale_function</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span>
-    <span class="n">instrument_label</span><span class="o">=</span><span class="s2">&quot;EES&quot;</span><span class="p">,</span>
+    <span class="n">y_axis_scale_function</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span>
+    <span class="n">z_axis_scale_function</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span>
+    <span class="n">instrument_label</span><span class="o">=</span><span class="s2">"EES"</span><span class="p">,</span>
     <span class="n">vertical_lines_unix</span><span class="o">=</span><span class="p">[</span><span class="n">event_time</span><span class="p">],</span>
 <span class="p">)</span>
 </pre></div>
